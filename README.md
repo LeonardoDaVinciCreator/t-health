@@ -30,7 +30,7 @@ git sparse-checkout set <название_папки>
 5. Переключаемся на нужную ветку:
 
 ```
-git checkout main # или master
+git checkout master
 ```
 
 ## Как вносить изменения и пушить
