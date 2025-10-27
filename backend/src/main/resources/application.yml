@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:15432/thealthdb
+    driver-class-name: org.postgresql.Driver
+    username: admin
+    password: admin
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        hibernate.hbm2ddl.import_files: init.sql
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+        format_sql: true
+
+  flyway:
+    locations: classpath:db.migration
+
+otp:
+  interval: "PT1M"
+  attempts-threshold: 5
+
+encryption:
+  key: ${PG_PRIVATE_KEY:secret}
+
+server:
+  servlet:
+    context-path: /
