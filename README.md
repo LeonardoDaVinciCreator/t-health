@@ -44,3 +44,6 @@ git push origin master
 ```
 
 > Обратите внимание: sparse checkout влияет только на локальную видимость файлов, пушит и коммитит Git всю ветку целиком.
+>
+> если появляется сообщение ```LF will be replaced by CRLF``` при ```git add .```, то для Windows: ```git config --global core.autocrlf true``` дальше повторить ```git add .```
+
