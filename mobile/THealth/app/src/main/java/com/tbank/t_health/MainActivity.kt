@@ -2,52 +2,31 @@ package com.tbank.t_health
 
 import UserPrefs
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import com.tbank.t_health.ui.theme.THealthTheme
-
-import com.tbank.t_health.screens.auth.AuthScreen
-import com.tbank.t_health.ui.screens.PostsScreen
-
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.tbank.t_health.screens.AchievementsScreen
-import com.tbank.t_health.screens.ChatScreen
-import com.tbank.t_health.screens.HealthScreen
-import com.tbank.t_health.screens.ProfileScreen
-import com.tbank.t_health.ui.screens.PostsScreen
+import androidx.navigation.NavHostController
+import com.tbank.t_health.screens.*
 import com.tbank.t_health.screens.auth.AuthScreen
-
-import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.StepsRecord
-import com.tbank.composefoodtracker.services.StepCounterService
-import kotlinx.coroutines.launch
+import com.tbank.t_health.screens.health.AddWorkoutScreen
+import com.tbank.t_health.ui.components.Footer
+import com.tbank.t_health.ui.components.Header
+import com.tbank.t_health.ui.screens.PostsScreen
+import com.tbank.t_health.ui.theme.THealthTheme
 
 class MainActivity : ComponentActivity() {
-
-
-
-
     private lateinit var userPrefs: UserPrefs
+    private var selectedFooterIndex by mutableStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         userPrefs = UserPrefs(this)
@@ -55,53 +34,80 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             THealthTheme {
+                val navController = rememberNavController()
+                var showFooter by remember { mutableStateOf(true) }
+                var showHeader by remember { mutableStateOf(true) }
 
+                LaunchedEffect(navController) {
+                    navController.currentBackStackEntryFlow.collect { entry ->
+                        val currentRoute = entry.destination.route
+                        showFooter = currentRoute != "auth"
+                        showHeader = currentRoute != "auth"
+                    }
+                }
 
-
-                Scaffold(modifier = Modifier.fillMaxSize()
-                                            .safeDrawingPadding()) { innerPadding ->
-
-                    val navController = rememberNavController()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                    topBar = {
+                        if (showHeader) {
+                            Header()
+                        }
+                    },
+                    bottomBar = {
+                        if (showFooter) {
+                            Footer(
+                                navController,
+                                selectedIndex = selectedFooterIndex,
+                                onItemSelected = { index ->
+                                    selectedFooterIndex = index
+                                    when (index) {
+                                        0 -> navigateSingleTop(navController, "health")
+                                        1 -> navigateSingleTop(navController, "achievements")
+                                        2 -> navigateSingleTop(navController, "posts")
+                                        3 -> navigateSingleTop(navController, "chat")
+                                        4 -> navigateSingleTop(navController, "profile")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = if(userPrefs.isUserLoggedIn()) "health" else "auth"
+                        startDestination = if (userPrefs.isUserLoggedIn()) "health" else "auth",
+                        modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable("posts") { PostsScreen(navController) }
-                        composable("health") { HealthScreen(navController) }
-                        composable("achievements") { AchievementsScreen(navController) }
-                        composable("chat") { ChatScreen(navController) }
-                        composable("profile") { ProfileScreen(navController) }
+                        composable("health") { HealthScreen(navController); selectedFooterIndex = 0 }
+                        composable("achievements") { AchievementsScreen(navController); selectedFooterIndex = 1 }
+                        composable("posts") { PostsScreen(navController); selectedFooterIndex = 2 }
+                        composable("chat") { ChatScreen(navController); selectedFooterIndex = 3 }
+                        composable("profile") { ProfileScreen(navController); selectedFooterIndex = 4 }
+
+                        composable("workout") { WorkoutScreen(navController) }
+                        composable("addWorkout") { AddWorkoutScreen(navController) }
+
                         composable("auth") {
                             AuthScreen(
-                                modifier = Modifier.padding(innerPadding),
                                 onLoginSuccess = {
-                                    navController.navigate("posts") {
+                                    navController.navigate("health") {
                                         popUpTo("auth") { inclusive = true }
                                     }
                                 }
                             )
                         }
-
                     }
-
                 }
-
             }
         }
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    THealthTheme {
-//        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//            AuthScreen(
-//                modifier = Modifier.padding(innerPadding),
-//                onLoginSuccess = {}
-//            )
-//            PostsScreen()
-//
-//        }
-//    }
-//}
+private fun navigateSingleTop(navController: NavHostController, route: String) {
+    val currentRoute = navController.currentDestination?.route
+    if (currentRoute != route) {
+        navController.navigate(route) {
+            popUpTo("health") { inclusive = false }
+            launchSingleTop = true
+        }
+    }
+}

@@ -236,18 +236,19 @@ val StatsTypography = Typography(
     //статы
     headlineMedium = TextStyle(
         fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
         textAlign = TextAlign.Center,
-        fontSize = 12.sp,
-        lineHeight = 12.sp,
+        fontSize = 18.sp,
+        lineHeight = 18.sp,
         color = Color.Black
     ),
     //заголовок для шагов
     bodyLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 16.sp,
+        fontSize = 14.sp,
+        lineHeight = 14.sp,
+        textAlign = TextAlign.Left,
         color = Color.Black
     ),
     //цифры на диаграмме

@@ -1,24 +1,24 @@
 import android.content.Context
-import com.tbank.t_health.data.User
+import com.tbank.t_health.data.UserData
 
 class UserPrefs(context: Context) {
     private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
-    fun saveUser(user: User) {
+    fun saveUser(userData: UserData) {
         prefs.edit()
-            .putString("nickname", user.nickname)
-            .putString("fullName", user.fullName)
-            .putString("phone", user.phone)
-            .putString("code", user.code)
+            .putString("nickname", userData.nickname)
+            .putString("fullName", userData.fullName)
+            .putString("phone", userData.phone)
+            .putString("code", userData.code)
             .apply()
     }
 
-    fun getUser(): User? {
+    fun getUser(): UserData? {
         val phone = prefs.getString("phone", null) ?: return null
         val nickname = prefs.getString("nickname", "") ?: ""
         val fullName = prefs.getString("fullName", "") ?: ""
         val code = prefs.getString("code", "") ?: ""
-        return User(nickname, fullName, phone, code)
+        return UserData(nickname, fullName, phone, code)
     }
 
     fun isUserLoggedIn(): Boolean {

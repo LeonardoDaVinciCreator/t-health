@@ -1,8 +1,7 @@
 package com.tbank.t_health.screens.auth
 
-import com.tbank.t_health.data.User
+import com.tbank.t_health.data.UserData
 import UserPrefs
-import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,24 +13,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tbank.t_health.R
 import com.tbank.t_health.ui.theme.AuthScreenTypography
-import com.tbank.t_health.ui.theme.InterFontFamily
 import com.tbank.t_health.ui.theme.THealthTheme
+
+import kotlinx.coroutines.delay
 
 @Composable
 fun AuthScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
@@ -62,7 +58,18 @@ fun AuthScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
             }
             composable("code/{phone}") { backStack ->
                 val phone = backStack.arguments?.getString("phone") ?: ""
-                CodeForm(phone = phone, onCodeSuccess = { navController.navigate("nickname/$phone/$it") })
+                CodeForm(
+                    phone = phone,
+                    onCodeSuccess = { code ->
+                        navController.navigate("nickname/$phone/$code")
+                    },
+                    onResendCode = {
+                        // Здесь: вызов API для повторной отправки SMS
+                        // Например: authRepository.resendCode(phone)
+                        // Пока — просто лог
+                        println("Повторная отправка кода на $phone")
+                    }
+                )
             }
             composable("nickname/{phone}/{code}") { backStack ->
                 val phone = backStack.arguments?.getString("phone") ?: ""
@@ -71,8 +78,7 @@ fun AuthScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                     code = code,
                     userPrefs = userPrefs,
                     onLoginSuccess = {
-                        // Перезапускаем MainActivity или переходим на PostsScreen
-                        //(context as? Activity)?.recreate()
+                        // перезапуск MainActivity или переходим на PostsScreen
                         onLoginSuccess()
                     })
             }
@@ -87,7 +93,6 @@ private fun AuthLogo(modifier: Modifier = Modifier) {
         contentDescription = null,
         modifier = modifier
             .size(width = 83.dp, height = 41.dp)
-            //.padding(start = 16.dp, top = 16.dp)
     )
 }
 
@@ -227,57 +232,91 @@ private fun AuthButton(onClick: () -> Unit) {
 }
 
 @Composable
-fun CodeForm(modifier: Modifier = Modifier,
-             phone: String,
-             onCodeSuccess: (String) -> Unit
+fun CodeForm(
+    modifier: Modifier = Modifier,
+    phone: String,
+    onCodeSuccess: (String) -> Unit,
+    onResendCode: () -> Unit
 ) {
     val typography = MaterialTheme.typography
+    val colors = MaterialTheme.colorScheme
+
     var code by remember { mutableStateOf("") }
-    var isError by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    // Таймер: 30 секунд
+    var timeLeft by remember { mutableStateOf(30) }
+
+    LaunchedEffect(Unit) {
+        while (timeLeft > 0) {
+            delay(1000)
+            timeLeft--
+        }
+    }
+
+    fun resendCode() {
+        timeLeft = 30
+        code = ""
+        error = null
+        onResendCode()
+    }
 
     LaunchedEffect(code) {
-        // здесь добавить проверку на код из смс
-        if (code.length == 4) {
-            onCodeSuccess(code)
+        if (code.length == 4 && !isLoading) {
+            isLoading = true
+            error = null
+            delay(800) // имитация запроса
+
+            if (code == "1234") {
+                onCodeSuccess(code)
+            } else {
+                error = "Неверный код"
+            }
+            isLoading = false
         }
     }
 
     Column(
         modifier = modifier
-            .size(301.dp, 178.dp)
-            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(16.dp))
-            .padding(horizontal = 32.dp, vertical = 40.dp),
+            .size(301.dp, 220.dp)
+            .background(colors.background, RoundedCornerShape(16.dp))
+            .padding(horizontal = 32.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(25.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
             text = "Введите код из SMS",
-            style = AuthScreenTypography.displayMedium
+            style = AuthScreenTypography.displayMedium,
+            textAlign = TextAlign.Center
         )
 
         BasicTextField(
             value = code,
-            onValueChange = {
-                if (it.length <= 4 && it.all { ch -> ch.isDigit() }) {
-                    code = it
-                    if (isError) isError = false
+            onValueChange = { newValue ->
+                if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
+                    code = newValue
                 }
             },
+            enabled = !isLoading,
             singleLine = true,
-            textStyle = AuthScreenTypography.labelMedium,
+            textStyle = AuthScreenTypography.labelMedium.copy(
+                color = if (error != null) colors.error else colors.onBackground
+            ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             decorationBox = { inner ->
                 Box(
                     modifier = Modifier
                         .background(Color.Transparent, RoundedCornerShape(8.dp))
                         .padding(8.dp)
-                        .width(100.dp),
+                        .width(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (code.isEmpty()) {
                         Text(
                             "____",
-                            style = AuthScreenTypography.labelMedium
+                            style = AuthScreenTypography.labelMedium,
+                            color = colors.outline
                         )
                     }
                     inner()
@@ -285,6 +324,42 @@ fun CodeForm(modifier: Modifier = Modifier,
             }
         )
 
+        if (error != null) {
+            Text(
+                text = error!!,
+                color = MaterialTheme.colorScheme.error,
+                style = AuthScreenTypography.labelSmall,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = colors.primary
+            )
+        } else {
+            if (timeLeft > 0) {
+                Text(
+                    text = "Отправить повторно через $timeLeft сек",
+                    style = AuthScreenTypography.labelSmall,
+                    color = colors.outline
+                )
+            } else {
+                TextButton(
+                    onClick = {
+                        resendCode()
+                    }
+                ) {
+                    Text(
+                        text = "Отправить код повторно",
+                        style = AuthScreenTypography.labelMedium,
+                        color = colors.primary
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -369,13 +444,13 @@ fun NicknameForm(
                 val isValid = nickname.length >= 3 && nickname.all { ch -> ch.isLetterOrDigit() || ch == '_' }
 
                 if (isValid) {
-                    val user = User(
+                    val userData = UserData(
                         nickname = nickname,
                         fullName = "—",
                         phone = phone,
                         code = code
                     )
-                    userPrefs.saveUser(user)
+                    userPrefs.saveUser(userData)
                     onLoginSuccess()
                 } else {
                     isError = true
@@ -439,14 +514,3 @@ private fun AuthContainer(
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun AuthScreenPreview() {
-    THealthTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            AuthScreen(modifier = Modifier.padding(innerPadding),
-                    onLoginSuccess = {})
-        }
-    }
-}

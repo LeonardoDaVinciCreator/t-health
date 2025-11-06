@@ -14,14 +14,15 @@ import com.tbank.t_health.ui.components.Footer
 @Composable
 fun ProfileScreen(navController: NavController) {
     Scaffold(
-        bottomBar = { Footer(navController) },
+        //bottomBar = { Footer(navController) },
         containerColor = Color(0xFFF5F5F5)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(bottom = 60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Profile Screen", modifier = Modifier.padding(16.dp))

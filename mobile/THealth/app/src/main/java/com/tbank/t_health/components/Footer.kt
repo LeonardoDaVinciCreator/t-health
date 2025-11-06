@@ -4,89 +4,107 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tbank.t_health.R
-
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.tbank.t_health.R
 import com.tbank.t_health.ui.theme.FooterTypography
-import com.tbank.t_health.ui.theme.InterFontFamily
-
-//при нажатии на кнопку экрана картинка увеличивается, а текст исчезает, изначально посты
 
 @Composable
-fun Footer(navController: NavController) {
+fun Footer(navController: NavController, selectedIndex: Int, onItemSelected: (Int) -> Unit) {
+
+    val items = listOf(
+        FooterItemData("ic_home", "Главная", 21, 19, 0),
+        FooterItemData("ic_trophy", "Достижения", 25, 23, 1),
+        FooterItemData("ic_posts", "Лента", 25, 25, 2),
+        FooterItemData("ic_chat", "Чат", 25, 25, 3),
+        FooterItemData("ic_profile", "Профиль", 30, 30, 4)
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
-
-            .background(Color(0xFFAAAAAA)),
+            .background(Color.White),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        FooterItem(R.drawable.ic_home, "Главная", 21, 19){ navController.navigate("posts") }
-        FooterItem(R.drawable.ic_trophy, "Достижения", 25, 23){ navController.navigate("achievements") }
-//
-        FooterItem(R.drawable.ic_add, "Лента", 25, 25){ navController.navigate("health") }
-        FooterItem(R.drawable.ic_chat, "Чат", 25, 25){ navController.navigate("chat") }
-        FooterItem(R.drawable.ic_profile, "Профиль", 30, 30){ navController.navigate("profile") }
-    }
-}
-
-@Composable
-fun FooterItem(icon: Int, label: String, iconWidth: Int, iconHeight: Int, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier
-            .width(70.dp)
-            .height(45.dp)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .height(30.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = icon),
-                    contentDescription = label,
-                    modifier = Modifier.size(iconWidth.dp, iconHeight.dp)
-                )
-            }
-            Text(
-                text = label,
-                style = FooterTypography.headlineLarge,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 0.dp)
-                    .height(15.dp)
+        items.forEach { item ->
+            FooterItem(
+                baseIconName = item.iconName,
+                label = item.label,
+                iconWidth = item.iconDefaultWidth,
+                iconHeight = item.iconDefaultHeight,
+                isSelected = selectedIndex == item.index,
+                onClick = {
+                    onItemSelected(item.index)
+                    when (item.index) {
+                        0 -> navController.navigate("health")
+                        1 -> navController.navigate("achievements")
+                        2 -> navController.navigate("posts")
+                        3 -> navController.navigate("chat")
+                        4 -> navController.navigate("profile")
+                        else -> navController.navigate("health")
+                    }
+                }
             )
         }
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun FooterPreview() {
-//    Footer()
-//}
+data class FooterItemData(
+    val iconName: String,
+    val label: String,
+    val iconDefaultWidth: Int,
+    val iconDefaultHeight: Int,
+    val index: Int
+)
+
+@Composable
+fun FooterItem(
+    baseIconName: String,
+    label: String,
+    iconWidth: Int,
+    iconHeight: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val iconResId = context.resources.getIdentifier(
+        if (isSelected) "${baseIconName}2" else baseIconName,
+        "drawable",
+        context.packageName
+    )
+
+    Box(
+        modifier = Modifier
+            .width(70.dp)
+            .height(60.dp)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = iconResId),
+                contentDescription = label,
+                modifier = Modifier.size(iconWidth.dp, iconHeight.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = FooterTypography.headlineLarge,
+                color = if (isSelected) Color.Black else Color.Gray
+            )
+        }
+    }
+}

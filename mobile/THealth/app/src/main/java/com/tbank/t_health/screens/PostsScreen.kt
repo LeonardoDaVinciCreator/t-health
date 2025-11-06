@@ -29,7 +29,6 @@ fun PostsScreen(navController: NavController) {
 
     Scaffold(
         topBar = { HeaderPost() },
-        bottomBar = { Footer(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
@@ -59,8 +58,3 @@ fun PostsScreen(navController: NavController) {
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun PostsScreenPreview() {
-//    PostsScreen()
-//}
