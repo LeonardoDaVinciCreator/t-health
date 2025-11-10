@@ -1,6 +1,6 @@
 package com.olegf.thealthback.web.dto;
 
-import com.olegf.thealthback.domain.entity.Program;
+import com.olegf.thealthback.domain.entity.Exercise;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -20,6 +20,6 @@ public class TrainingCreateDto {
         private String title;
         private String description;
         private byte[] media;
-        private Program.Timing timing;
+        private Exercise.Timing timing;
     }
 }

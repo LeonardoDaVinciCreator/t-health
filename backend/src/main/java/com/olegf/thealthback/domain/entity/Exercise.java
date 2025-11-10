@@ -8,7 +8,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Data
 @Table("program")
 @AllArgsConstructor
-public class Program {
+public class Exercise {
     @Id
     private Long id;
     private Long trainingId;
@@ -17,7 +17,7 @@ public class Program {
     private byte[] media;
     private Timing timing;
 
-    public Program(Long trainingId, String title, String description, byte[] media, Timing timing) {
+    public Exercise(Long trainingId, String title, String description, byte[] media, Timing timing) {
         this.trainingId = trainingId;
         this.title = title;
         this.description = description;

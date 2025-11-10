@@ -8,6 +8,7 @@ import com.olegf.thealthback.web.dto.UserCreateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -41,10 +42,11 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/activities")
-    public Page<Activity> getUserActivities(
+    public List<Activity> getUserActivities(
             @PathVariable long userId,
-            @RequestParam(value = "date", required = false) LocalDateTime date, Pageable pageable
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date
     ) {
-        return userService.getUserActivities(userId, date, pageable);
+        return userService.getUserActivities(userId, date);
     }
 }

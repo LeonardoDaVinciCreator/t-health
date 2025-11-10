@@ -17,11 +17,11 @@ public class Training {
     private Long id;
     private long userId;
     private LocalDateTime startDate;
-    private List<Program> program;
+    private List<Exercise> exercise;
 
     public Training(Long userId) {
         this.userId = userId;
         this.startDate = LocalDateTime.now();
-        this.program = Collections.emptyList();
+        this.exercise = Collections.emptyList();
     }
 }
