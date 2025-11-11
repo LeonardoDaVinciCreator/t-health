@@ -10,7 +10,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Table("activities")
@@ -37,7 +36,7 @@ public class Activity {
         );
     }
 
-    public  enum Type {
+    public enum Type {
         STEPS,
         TRAINING,
         MOVING,

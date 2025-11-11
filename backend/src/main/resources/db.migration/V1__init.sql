@@ -1,19 +1,18 @@
 create table if not exists app_users
 (
-    id       serial  primary key not null,
-    username varchar(68)         not null,
-    phone    bytea               not null
+    id       bigserial primary key not null,
+    username text                  not null,
+    phone    bytea                 not null
     );
 
 create table if not exists activities
 (
-    id       serial primary key not null,
-    date     timestamp          not null,
-    user_id  int8               not null references app_users(id) on delete cascade,
-    steps    int8,
-    value    text,
-    goals    text[],
-    calories float8
+    id       bigserial primary key not null,
+    user_id  bigint                not null references app_users(id) on delete cascade,
+    value    numeric,
+    type     varchar(50),
+    calories double precision,
+    date     timestamp             not null
     );
 
 create table if not exists training
