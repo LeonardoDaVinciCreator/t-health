@@ -22,8 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 
 
@@ -34,12 +36,11 @@ import androidx.navigation.NavController
 import com.tbank.t_health.R
 import com.tbank.t_health.data.WorkoutRepository
 import com.tbank.t_health.data.model.WorkoutData
-import com.tbank.t_health.ui.theme.HeaderTypography
-import com.tbank.t_health.ui.theme.InterFontFamily
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -59,6 +60,7 @@ fun AddWorkoutScreen(navController: NavController) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
     Scaffold(
+        floatingActionButtonPosition = FabPosition.Center,
         topBar = {
             Row(
                 modifier = Modifier
@@ -68,6 +70,9 @@ fun AddWorkoutScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Невидимый элемент для центрирования
+                Box(modifier = Modifier.size(48.dp))
+
                 Text(
                     "Добавление тренировки",
                     style = TextStyle(
@@ -77,57 +82,40 @@ fun AddWorkoutScreen(navController: NavController) {
                         lineHeight = 17.sp
                     )
                 )
+
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clickable { navController.popBackStack() }
-                ){
+                ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_back),
                         contentDescription = "Back",
                         modifier = Modifier
                             .size(11.dp)
-                            .align(Alignment.Center)
+                            .align(Alignment.Center),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black)
                     )
                 }
-
-
             }
         },
-        containerColor = Color(0xFFF5F5F5)
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            val fields = listOf(
-                FieldData(type = "Название тренировки:", name, onValueChange = { name = it }, label = "жимовая"),
-                FieldData(type = "Тип нагрузки:", value = type, onValueChange = { type = it }, label = "Анаэробная"),
-                FieldData(type = "Продолжительность:", value = durationMinutes, onValueChange = { durationMinutes = it }, label = "ч:мм:cc", keyboardType = KeyboardType.Number),
-                FieldData(type = "Потрачено калорий:", value = calories, onValueChange = { calories = it }, label = "300", keyboardType = KeyboardType.Number, shape = RoundedCornerShape(39.dp)),
-                FieldData(type = "Дата:", value = date, onValueChange = { date = it }, label = "дд.мм.гггг", shape = RoundedCornerShape(30.dp), height = 39.dp)
-            )
-            TrainingFields(fields)
-
-
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .height(40.dp),
                 onClick = {
                     if (name.isBlank() || type.isBlank() || durationMinutes.isBlank() || calories.isBlank() || date.isBlank()) {
                         Toast.makeText(context, "Заполните все поля", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        return@ExtendedFloatingActionButton
                     }
 
                     val localDate = try {
                         LocalDate.parse(date, dateFormatter)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         Toast.makeText(context, "Неверный формат даты", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        return@ExtendedFloatingActionButton
                     }
 
                     val totalSeconds = try {
@@ -137,17 +125,17 @@ fun AddWorkoutScreen(navController: NavController) {
                             2 -> parts[0] * 60 + parts[1]
                             else -> {
                                 Toast.makeText(context, "Неверный формат времени", Toast.LENGTH_SHORT).show()
-                                return@Button
+                                return@ExtendedFloatingActionButton
                             }
                         }
                         if (seconds < 1) {
                             Toast.makeText(context, "Продолжительность должна быть не менее 1 секунды", Toast.LENGTH_SHORT).show()
-                            return@Button
+                            return@ExtendedFloatingActionButton
                         }
-                         seconds
-                    } catch (e: Exception) {
+                        seconds
+                    } catch (_: Exception) {
                         Toast.makeText(context, "Ошибка в формате продолжительности", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        return@ExtendedFloatingActionButton
                     }
 
                     coroutineScope.launch {
@@ -163,26 +151,44 @@ fun AddWorkoutScreen(navController: NavController) {
                         )
 
                         workoutRepo.saveWorkoutLocally(workout)
-                        Toast.makeText(context, "Тренировка сохранена", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack() // Возврат на экран тренировок
+                        navController.previousBackStackEntry?.savedStateHandle?.set("workoutSaved", true)
+                        navController.popBackStack()
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
+                containerColor = Color(0xFFFDD500),
+                shape = RoundedCornerShape(11.dp),
+                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+            ){
                 Text(
                     "Сохранить",
                     style = TextStyle(
                         fontFamily = RobotoFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp,
-                        color = Color.Black
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp
                     )
                 )
             }
+        },
+        containerColor = Color(0xFFF5F5F5)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            val fields = listOf(
+                FieldData(type = "Название тренировки:", name, onValueChange = { name = it }, label = "жимовая"),
+                FieldData(type = "Тип нагрузки:", value = type, onValueChange = { type = it }, label = "Анаэробная"),
+                FieldData(type = "Продолжительность:", value = durationMinutes, onValueChange = { durationMinutes = it }, label = "мм:cc", keyboardType = KeyboardType.Number),
+                FieldData(type = "Потрачено калорий:", value = calories, onValueChange = { calories = it }, label = "300", keyboardType = KeyboardType.Number, shape = RoundedCornerShape(39.dp)),
+                FieldData(type = "Дата:", value = date, onValueChange = { date = it }, label = "дд.мм.гггг", shape = RoundedCornerShape(30.dp), height = 39.dp)
+            )
+            TrainingFields(fields)
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -198,148 +204,15 @@ data class FieldData(
 )
 
 @Composable
-fun DurationPickerField(
-    label: String = "Продолжительность:",
-    onDurationSelected: (Int, Int, Int) -> Unit
-) {
-    var hours by remember { mutableStateOf(0) }
-    var minutes by remember { mutableStateOf(0) }
-    var seconds by remember { mutableStateOf(0) }
-
-    Column {
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = RobotoFontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 14.sp,
-                color = Color.Black
-            )
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
-                .padding(vertical = 12.dp, horizontal = 20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // часы
-                DurationNumberPicker(
-                    value = hours,
-                    range = 0..23,
-                    label = "ч"
-                ) { new ->
-                    hours = new
-                    onDurationSelected(hours, minutes, seconds)
-                }
-
-                // минуты
-                DurationNumberPicker(
-                    value = minutes,
-                    range = 0..59,
-                    label = "мин"
-                ) { new ->
-                    minutes = new
-                    onDurationSelected(hours, minutes, seconds)
-                }
-
-                // секунды
-                DurationNumberPicker(
-                    value = seconds,
-                    range = 0..59,
-                    label = "сек"
-                ) { new ->
-                    seconds = new
-                    onDurationSelected(hours, minutes, seconds)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-    }
-}
-
-@Composable
-fun DurationNumberPicker(
-    value: Int,
-    range: IntRange,
-    label: String,
-    onValueChange: (Int) -> Unit
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // кнопка -
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFF5F5F5))
-                    .clickable { if (value > range.first) onValueChange(value - 1) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("-", fontSize = 20.sp, color = Color.Black)
-            }
-
-            // значение
-            Text(
-                text = "%02d".format(value),
-                modifier = Modifier.padding(horizontal = 12.dp),
-                style = TextStyle(
-                    fontFamily = RobotoMonoFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp,
-                    color = Color.Black
-                )
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFF5F5F5))
-                    .clickable { if (value < range.last) onValueChange(value + 1) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("+", fontSize = 20.sp, color = Color.Black)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = RobotoMonoFontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                color = Color(0xFF8C8E92)
-            )
-        )
-    }
-}
-
-
-@Composable
 fun TrainingFields(fields: List<FieldData>) {
-    val context = LocalContext.current
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var durationHours by remember { mutableStateOf(0) }
-    var durationMinutes by remember { mutableStateOf(0) }
-    var durationSeconds by remember { mutableStateOf(0) }
-    var showSecondsDialog by remember { mutableStateOf(false) }
 
-    var expanded by remember { mutableStateOf(false) }
+    var showWorkoutTypePicker by remember { mutableStateOf(false) }
     var selectedWorkoutType by remember { mutableStateOf<WorkoutType?>(null) }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val dateField = fields.find { it.type == "Дата:" }
+    val currentDateValue = dateField?.value ?: ""
 
     Column {
         fields.forEach { field ->
@@ -359,7 +232,6 @@ fun TrainingFields(fields: List<FieldData>) {
             val textValue = field.value
 
             when (field.type) {
-                // ======= Тип тренировки =======
                 "Тип нагрузки:" -> {
                     Box(
                         modifier = Modifier
@@ -368,7 +240,7 @@ fun TrainingFields(fields: List<FieldData>) {
                             .clip(field.shape)
                             .background(Color.White)
                             .padding(horizontal = 10.dp, vertical = 8.dp)
-                            .clickable { expanded = true },
+                            .clickable { showWorkoutTypePicker = true },
                         contentAlignment = Alignment.CenterStart
                     ) {
                         val textToShow = selectedWorkoutType?.displayName ?: field.label.orEmpty()
@@ -383,27 +255,19 @@ fun TrainingFields(fields: List<FieldData>) {
                             )
                         )
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White)
-                        ) {
-                            WorkoutType.entries.forEach { type ->
-                                DropdownMenuItem(
-                                    text = { Text(type.displayName) },
-                                    onClick = {
-                                        selectedWorkoutType = type
-                                        field.onValueChange(type.displayName) // 🔹 Сохраняем по-русски
-                                        expanded = false
-                                    }
-                                )
-                            }
+                        if (showWorkoutTypePicker) {
+                            WorkoutTypePickerDialog(
+                                initialType = selectedWorkoutType,
+                                onDismiss = { showWorkoutTypePicker = false },
+                                onConfirm = { type ->
+                                    selectedWorkoutType = type
+                                    field.onValueChange(type.displayName)
+                                    showWorkoutTypePicker = false
+                                }
+                            )
                         }
                     }
                 }
-
 
                 "Дата:" -> {
                     Box(
@@ -414,21 +278,7 @@ fun TrainingFields(fields: List<FieldData>) {
                             .background(Color.White)
                             .padding(horizontal = 10.dp, vertical = 8.dp)
                             .clickable {
-                                val now = LocalDate.now()
-                                val datePicker = android.app.DatePickerDialog(
-                                    context,
-                                    { _, year, month, dayOfMonth ->
-                                        val pickedDate = LocalDate.of(year, month + 1, dayOfMonth)
-                                        if (pickedDate.isBefore(now)) {
-                                            Toast.makeText(context, "Дата не может быть раньше сегодня", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            val formatted = pickedDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-                                            field.onValueChange(formatted)
-                                        }
-                                    },
-                                    now.year, now.monthValue - 1, now.dayOfMonth
-                                )
-                                datePicker.show()
+                                showDatePicker = true
                             },
                         contentAlignment = Alignment.CenterStart
                     ) {
@@ -453,6 +303,27 @@ fun TrainingFields(fields: List<FieldData>) {
                                 )
                             )
                         }
+                    }
+
+                    if (showDatePicker) {
+                        CustomDatePickerDialog(
+                            currentDate = if (currentDateValue.isNotEmpty()) {
+                                try {
+                                    LocalDate.parse(currentDateValue, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            } else {
+                                null
+                            },
+                            onDismiss = { showDatePicker = false },
+                            onDateSelected = { date ->
+                                val formatted = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+
+                                fields.find { it.type == "Дата:" }?.onValueChange?.invoke(formatted)
+                                showDatePicker = false
+                            }
+                        )
                     }
                 }
 
@@ -493,8 +364,8 @@ fun TrainingFields(fields: List<FieldData>) {
                     if (showDurationDialog) {
                         DurationPickerDialog(
                             onDismiss = { showDurationDialog = false },
-                            onConfirm = { h, m, s ->
-                                val formatted = String.format("%02d:%02d:%02d", h, m, s)
+                            onConfirm = { m, s ->
+                                val formatted = String.format("%02d:%02d", m, s)
                                 field.onValueChange(formatted)
                                 showDurationDialog = false
                             }
@@ -547,36 +418,131 @@ fun TrainingFields(fields: List<FieldData>) {
     }
 }
 
+@Composable
+fun WorkoutTypePickerDialog(
+    initialType: WorkoutType? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (WorkoutType) -> Unit
+) {
+    var selectedType by remember { mutableStateOf(initialType) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFDFDFD),
+        title = {
+            Text(
+                "Выберите тип нагрузки",
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp
+                )
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WorkoutType.entries.forEach { type ->
+                    WorkoutTypeItem(
+                        workoutType = type,
+                        isSelected = selectedType == type,
+                        onSelect = { selectedType = type }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    selectedType?.let { onConfirm(it) }
+                },
+                enabled = selectedType != null,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Выбрать",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F5)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Отмена",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun WorkoutTypeItem(
+    workoutType: WorkoutType,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isSelected) Color(0xFFFDD500) else Color(0xFFF5F5F5)
+            )
+            .clickable(onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = workoutType.displayName,
+            style = TextStyle(
+                fontFamily = RobotoFontFamily,
+                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                fontSize = 14.sp,
+                color = Color.Black
+            )
+        )
+    }
+}
 
 @Composable
 fun DurationPickerDialog(
-    initialHours: Int = 0,
     initialMinutes: Int = 0,
     initialSeconds: Int = 0,
     onDismiss: () -> Unit,
-    onConfirm: (hours: Int, minutes: Int, seconds: Int) -> Unit
+    onConfirm: (minutes: Int, seconds: Int) -> Unit
 ) {
-    var hours by remember { mutableStateOf(initialHours) }
     var minutes by remember { mutableStateOf(initialMinutes) }
     var seconds by remember { mutableStateOf(initialSeconds) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Выберите продолжительность") },
+        containerColor = Color(0xFFFDFDFD),
         text = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 NumberPickerColumn(
-                    label = "ч",
-                    range = 0..23,
-                    value = hours,
-                    onValueChange = { hours = it }
-                )
-                NumberPickerColumn(
                     label = "мин",
-                    range = 0..59,
+                    range = 0..99,
                     value = minutes,
                     onValueChange = { minutes = it }
                 )
@@ -589,15 +555,45 @@ fun DurationPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onConfirm(hours, minutes, seconds)
-                onDismiss()
-            }) {
-                Text("OK")
+            Button(
+                onClick = {
+                    onConfirm(minutes, seconds)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Выбрать",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
             }
+
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            Button(
+                onClick = {
+                    onDismiss()
+                },
+                enabled = true,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Отмена",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+            }
         }
     )
 }
@@ -612,8 +608,7 @@ fun NumberPickerColumn(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label)
         Spacer(modifier = Modifier.height(4.dp))
-        // Используем compose-numberpicker
-        androidx.compose.foundation.layout.Box {
+        Box {
             AndroidView(
                 modifier = Modifier.height(120.dp),
                 factory = { context ->
@@ -635,39 +630,214 @@ fun NumberPickerColumn(
 }
 
 @Composable
-fun WorkoutTypeSelector(
-    selectedType: WorkoutType?,
-    onTypeSelected: (WorkoutType) -> Unit
+fun CustomDatePickerDialog(
+    currentDate: LocalDate? = null,
+    onDismiss: () -> Unit,
+    onDateSelected: (LocalDate) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(currentDate) }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selectedType?.displayName ?: "",
-            onValueChange = {},
-            label = { Text("Тип тренировки") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true },
-            enabled = false,
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFDFDFD),
+        title = {
+            Text(
+                "Выберите дату",
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp
+                )
+            )
+        },
+        text = {
+            SingleSelectCalendar(
+                initiallySelected = selectedDate,
+                onDateSelected = { date ->
+                    selectedDate = date
+                }
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    selectedDate?.let { onDateSelected(it) }
+                },
+                enabled = selectedDate != null,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Выбрать",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                },
+                enabled = true,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Отмена",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+        }
+    )
+}
 
-        )
+@Composable
+fun SingleSelectCalendar(
+    modifier: Modifier = Modifier,
+    initiallySelected: LocalDate? = null,
+    onDateSelected: (LocalDate) -> Unit = { }
+) {
+    val monthYearFormatter = DateTimeFormatter.ofPattern("LLLL yyyy")
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
+    var currentMonth by remember {
+        mutableStateOf(initiallySelected?.let { YearMonth.from(it) } ?: YearMonth.now())
+    }
+    var selectedDate by remember { mutableStateOf(initiallySelected) }
+    val daysOfWeek = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
+
+    // нахождение первого дня для сетки календаря
+    val firstDayOfMonth = currentMonth.atDay(1)
+    val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value + 6) % 7
+    val firstGridDate = firstDayOfMonth.minusDays(firstDayOfWeek.toLong())
+
+    // Всегда 6 недель в месяце (6*7 = 42 ячейки)
+    val days = List(42) { firstGridDate.plusDays(it.toLong()) }
+
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            WorkoutType.entries.forEach { type ->
-                DropdownMenuItem(
-                    text = { Text(type.displayName) },
-                    onClick = {
-                        onTypeSelected(type)
-                        expanded = false
+            IconButton(onClick = {
+                currentMonth = currentMonth.minusMonths(1)
+            }) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_arrow_left),
+                    contentDescription = "Предыдущий месяц"
+                )
+            }
+            Text(
+                text = currentMonth.format(monthYearFormatter).replaceFirstChar { it.uppercase() },
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 18.sp
+                ),
+                color = Color.Black
+            )
+            IconButton(onClick = {
+                currentMonth = currentMonth.plusMonths(1)
+            }) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_arrow_left),
+                    contentDescription = "Следующий месяц",
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = -1f
                     }
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Дни недели
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ){
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                daysOfWeek.forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.size(32.dp),
+                        style = TextStyle(
+                            fontFamily = RobotoFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp
+                        ),
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ){
+            Column{
+                for (week in 0 until 6) {
+                    Row {
+                        for (dayIdx in 0 .. 6) {
+                            val date = days[week * 7 + dayIdx]
+                            val inCurrentMonth = date.month == currentMonth.month
+                            val isSelected = date == selectedDate
+                            val isToday = date == LocalDate.now()
+
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when {
+                                            isSelected -> Color(0xFFFDD500)
+                                            isToday -> Color(0xFFE8E8E8)
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .clickable(
+                                        enabled = inCurrentMonth && !date.isBefore(LocalDate.now()),
+                                        onClick = {
+                                            selectedDate = date
+                                            onDateSelected(date)
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = date.dayOfMonth.toString(),
+                                    color = when {
+                                        !inCurrentMonth -> Color.LightGray
+                                        date.isBefore(LocalDate.now()) -> Color.LightGray
+                                        else -> Color.Black
+                                    },
+                                    style = TextStyle(
+                                        fontFamily = RobotoFontFamily,
+                                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                                        fontSize = 15.sp
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

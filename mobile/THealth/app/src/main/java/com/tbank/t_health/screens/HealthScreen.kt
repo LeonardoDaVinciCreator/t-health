@@ -84,7 +84,6 @@ import kotlinx.coroutines.launch
 import com.tbank.t_health.data.HealthDataMonth
 import com.tbank.t_health.data.toWeeklyGroups
 import com.tbank.t_health.ui.theme.RobotoFontFamily
-import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 
 
@@ -128,6 +127,7 @@ fun HealthScreen(navController: NavController) {
 
     var steps by remember { mutableStateOf(0) }
     var activeMinutes by remember { mutableStateOf(0) }
+    var activeCalories by remember { mutableStateOf(0.0) }
     var calories by remember { mutableStateOf(0.0) }
     var loading by remember { mutableStateOf(true) }
     var permissionRequested by remember { mutableStateOf(false) }
@@ -155,10 +155,11 @@ fun HealthScreen(navController: NavController) {
             permissionLauncher.launch(PERMISSIONS)
         } else if (granted.containsAll(PERMISSIONS)) {
             steps = stepService.getStepsForToday()//+
-            activeMinutes = stepService.getActiveMinutesForToday().toInt() + (activeStorage.getActiveSeconds()/60).toInt()//-+ примерно без скорости, просто кол-во шагов / 100 = минуты
+            activeMinutes = stepService.getActiveMinutesForToday().toInt() + (activeStorage.getActiveSeconds()/60)//-+ примерно без скорости, просто кол-во шагов / 100 = минуты
 
-            calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeStorage.getCalories()//+, примерно без веса, роста, скорости, но итого за день все правильно, так как обновление в 00:00 данных
-            loading = false
+            activeCalories = activeStorage.getCalories()
+            calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeCalories//+, примерно без веса, роста, скорости, но итого за день все правильно, так как обновление в 00:00 данных
+
 
             yesterdaySteps = stepService.getStepsForDate(
                 java.time.LocalDate.now().minusDays(1)
@@ -249,7 +250,7 @@ fun HealthScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(14.dp))
             //MenuSection()
 
-            MenuSection(navController)
+            MenuSection(navController, activeCalories)
 
 
         }
@@ -1002,7 +1003,7 @@ fun StepsChart2(
 }
 
 @Composable
-fun MenuSection(navController: NavController) {
+fun MenuSection(navController: NavController, calories:Double) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val exerciseService = remember { ExerciseService(context) }
@@ -1013,45 +1014,57 @@ fun MenuSection(navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        MenuItem("Тренировка", onClick = {
+        MenuItem("Тренировка","-${calories.toInt()}", onClick = {
             navController.navigate("workout")
-        })
+            },
+            onClickAdd = {
+                navController.navigate("addWorkout")
+            }
+        )
 
+        //добавить переменную для калорий из еды
         MenuItem("Питание", onClick = {
             Log.d("Exercise", "Питание нажато")
-        })
-
-//        MenuItem("Советы", onClick = {
-//            Log.d("Exercise", "Советы нажаты")
-//        })
+            },
+            onClickAdd = {
+            Log.d("Exercise", "Добавить калории за еду")
+            }
+        )
     }
 }
 
 
-
+//добавить калории из еды
 @Composable
-fun MenuItem(label: String, onClick: () -> Unit) {
+fun MenuItem(label: String, calories:String = "0", onClick: () -> Unit, onClickAdd: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFFFFFFF))
-            .clickable { onClick() },
+            .background(Color(0xFFFFFFFF)),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            modifier = Modifier.padding(start = 10.dp),
-            text = label,
-            style = TextStyle(
-                fontFamily = RobotoFontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 14.sp,
-                lineHeight = 14.sp
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .clickable { onClick() }
+                .padding(start = 10.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = label,
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp
+                )
             )
-        )
+        }
 
         Row(
             modifier = Modifier.width(100.dp),
@@ -1060,7 +1073,7 @@ fun MenuItem(label: String, onClick: () -> Unit) {
         ) {
             Text(
                 modifier = Modifier.width(44.dp),
-                text = "3933",
+                text = calories,
                 style = TextStyle(
                     fontFamily = RobotoFontFamily,
                     fontWeight = FontWeight.Normal,
@@ -1070,9 +1083,9 @@ fun MenuItem(label: String, onClick: () -> Unit) {
                 )
             )
             Divider(modifier = Modifier.width(1.dp).height(20.dp), color = Color(0xFF8C8E92))
-            Box(modifier = Modifier.size(40.dp)){
+            Box(modifier = Modifier.size(40.dp).clickable { onClickAdd() }){
                 Image(painter = painterResource(id = R.drawable.ic_plus),
-                    contentDescription = "Аватар",
+                    contentDescription = null,
                     modifier = Modifier
                         .size(11.dp)
                         .align(Alignment.Center),

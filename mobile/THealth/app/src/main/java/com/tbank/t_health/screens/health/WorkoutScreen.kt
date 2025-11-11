@@ -1,15 +1,19 @@
 package com.tbank.t_health.screens
 
+import WorkoutType
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,12 +41,41 @@ import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.util.*
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ColorFilter.Companion.tint
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
+
+    var showSuccessMessage by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>("workoutSaved")?.let { saved ->
+            Log.d("WorkoutScreen", "Получен флаг workoutSaved: $saved")
+            if (saved) {
+                showSuccessMessage = true
+                delay(5000)//время для сообщения
+                showSuccessMessage = false
+                navController.currentBackStackEntry?.savedStateHandle?.remove<Boolean>("workoutSaved")
+            }
+        }
+    }
+
+    val initialWeekRange = remember {
+        val today = LocalDate.now()
+        val start = today.with(java.time.DayOfWeek.MONDAY)
+        val end = start.plusDays(6)
+        Pair(start, end)
+    }
+
+    var selectedDateRange by remember { mutableStateOf<Pair<LocalDate?, LocalDate?>?>(initialWeekRange) }
 
     var workoutRunning by remember { mutableStateOf(false) }
     var activeWorkoutId by remember { mutableStateOf<String?>(null) }
@@ -67,37 +100,10 @@ fun WorkoutScreen(navController: NavController) {
                 modifier = Modifier
                     .size(width = 230.dp, height = 40.dp),
                 onClick = {
-
                     navController.navigate("addWorkout")
-//                    coroutineScope.launch {
-//                        val today = LocalDate.now()
-//                        val plannedDates = listOf(
-//                            today,
-//                            today.plusDays(1),
-//                            today.plusDays(2)
-//                        )
-//
-//                        val workoutsToAdd = plannedDates.mapIndexed { index, date ->
-//                            WorkoutData(
-//                                id = UUID.randomUUID().toString(),
-//                                name = "Тренировка #${index + 1}",
-//                                type = "running",
-//                                calories = 200.0,
-//                                durationSeconds = 600,
-//                                date = date,
-//                                plannedDate = date,
-//                                isCompleted = false
-//                            )
-//                        }
-//
-//                        workoutsToAdd.forEach { workoutRepo.saveWorkoutLocally(it) }
-//                        workouts = workoutRepo.loadLocalWorkouts()
-//
-//                        Log.d("WorkoutScreen", "Добавлены 3 тренировки на 3 дня: $plannedDates")
-//                    }
                 },
                 containerColor = Color(0xFFFDD500),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(11.dp),
                 elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp),
                 text = {
                     Text(
@@ -115,69 +121,71 @@ fun WorkoutScreen(navController: NavController) {
                         painter = painterResource(id = R.drawable.ic_plus),
                         modifier = Modifier.size(11.dp),
                         contentDescription = "Plus",
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF333333))
+                        colorFilter = tint(Color(0xFF333333))
                     )
                 }
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            if (workouts.isEmpty()) {
-                Text(
-                    "Нет тренировок. Добавьте первую!",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    style = TextStyle(
-                        fontFamily = RobotoFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp
-                    ),
-                    color = Color.Gray
-                )
-            } else {
+        Box(modifier = Modifier.fillMaxSize()){
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
 
-                // Аналитика за неделю
-                WeeklyWorkoutStats(
-                    workouts = workouts,
-                    onSelectInterval = { /* TODO: открыть выбор периода */ }
-                )
-
-
-                //группировка по дням недели
-                val groupedByDay = workouts
-                    //конвертация в localDate
-                    .map { workout ->
-                        val parsedDate = LocalDate.parse(workout.plannedDate)
-                        workout to parsedDate
+                val filteredWorkouts = if (selectedDateRange?.first != null || selectedDateRange?.second != null) {
+                    val (start, end) = selectedDateRange!!
+                    workouts.filter { workout ->
+                        val date = LocalDate.parse(workout.plannedDate)
+                        (start == null || !date.isBefore(start)) &&
+                                (end == null || !date.isAfter(end))
                     }
-                    .sortedBy  { it.second }
+                } else {
+                    workouts
+                }
+
+                val groupedByDay = filteredWorkouts
+                    .map { it to LocalDate.parse(it.plannedDate) }
+                    .sortedBy { it.second }
                     .groupBy { it.second }
 
-                val dayNames = mapOf(
-                    java.time.DayOfWeek.MONDAY to "Понедельник",
-                    java.time.DayOfWeek.TUESDAY to "Вторник",
-                    java.time.DayOfWeek.WEDNESDAY to "Среда",
-                    java.time.DayOfWeek.THURSDAY to "Четверг",
-                    java.time.DayOfWeek.FRIDAY to "Пятница",
-                    java.time.DayOfWeek.SATURDAY to "Суббота",
-                    java.time.DayOfWeek.SUNDAY to "Воскресенье"
-                )
+                if (workouts.isEmpty()) {
+                    item{
+                        Text(
+                            "Нет тренировок. Добавьте первую!",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            style = TextStyle(
+                                fontFamily = RobotoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp
+                            ),
+                            color = Color.Gray
+                        )
+                    }
+                } else {
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    // Аналитика за неделю
+                    item{
+                        WeeklyWorkoutStats(
+                            workouts = workouts,
+                            selectedDateRange = selectedDateRange,
+                            onDateRangeSelected = { start, end ->
+                                selectedDateRange = Pair(start, end)
+                            }
+                        )
+                    }
+
                     groupedByDay.forEach { (date, workoutsInDayPairs) ->
                         val workoutsInDay = workoutsInDayPairs.map { it.first }
 
-                        val dayName = dayNames[date.dayOfWeek] ?: ""
-                        val formattedDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                        val headerText = formatDayHeader(date)
 
                         item {
                             Text(
-                                text = "$dayName, $formattedDate",
+                                text = headerText,
                                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp),
                                 style = TextStyle(
                                     fontFamily = RobotoFontFamily,
@@ -278,6 +286,12 @@ fun WorkoutScreen(navController: NavController) {
                     }
                 }
             }
+
+            //сообщение о сохранении тренировки
+            if (showSuccessMessage) {
+                SuccessMessage()
+            }
+
         }
     }
 }
@@ -329,12 +343,7 @@ fun WorkoutCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = when (workout.type) {
-                        "running" -> "Кардио"
-                        "strength" -> "Силовая"
-                        "endurance" -> "Выносливость"
-                        else -> workout.type
-                    },
+                    text = workout.type,
                     style = TextStyle(
                         fontFamily = RobotoMonoFontFamily,
                         fontSize = 12.sp
@@ -346,8 +355,10 @@ fun WorkoutCard(
                     modifier = Modifier.width(150.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val minutes = workout.durationSeconds / 60
-                    val formattedTime = String.format("%02d:%02d", minutes, 0)
+                    val totalSeconds = workout.durationSeconds
+                    val minutes = totalSeconds / 60
+                    val seconds = totalSeconds % 60
+                    val formattedTime = String.format("%02d:%02d", minutes, seconds)
 
                     Text(
                         formattedTime,
@@ -417,19 +428,28 @@ fun getWorkoutWord(count: Int): String {
 @Composable
 fun WeeklyWorkoutStats(
     workouts: List<WorkoutData>,
-    onSelectInterval: () -> Unit
+    selectedDateRange: Pair<LocalDate?, LocalDate?>? = null,
+    onDateRangeSelected: (LocalDate?, LocalDate?) -> Unit
 ) {
-    val startOfWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
-    val endOfWeek = startOfWeek.plusDays(6)
+    var isSelected by remember { mutableStateOf(false) }
 
-    val workoutsThisWeek = workouts.filter {
-        val date = LocalDate.parse(it.date)
-        date in startOfWeek..endOfWeek && it.isCompleted
+    val (rangeStart, rangeEnd) = selectedDateRange ?: run {
+        val now = LocalDate.now()
+        val start = now.with(java.time.DayOfWeek.MONDAY)
+        val end = start.plusDays(6)
+        Pair(start, end)
     }
 
-    val totalWorkouts = workoutsThisWeek.size
-    val typeCounts = workoutsThisWeek.groupingBy { it.type }.eachCount()
-    val totalSeconds = workoutsThisWeek.sumOf { it.durationSeconds }
+    val workoutsInPeriod = workouts.filter {
+        val workoutDate = LocalDate.parse(it.plannedDate)
+        (rangeStart == null || !workoutDate.isBefore(rangeStart)) &&
+                (rangeEnd == null || !workoutDate.isAfter(rangeEnd)) &&
+                it.isCompleted
+    }
+
+    val totalWorkouts = workoutsInPeriod.size
+    val typeCounts = workoutsInPeriod.groupingBy { it.type }.eachCount()
+    val totalSeconds = workoutsInPeriod.sumOf { it.durationSeconds }
     val totalMinutes = totalSeconds / 60
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
@@ -451,18 +471,23 @@ fun WeeklyWorkoutStats(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .fillMaxWidth().heightIn(max = 1000.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .padding(16.dp)
+            .padding(12.dp)
     ) {
+        val periodText = if (selectedDateRange != null) {
+            "За выбранный период"
+        } else {
+            "На этой неделе"
+        }
+
         Text(
-            text = "На этой неделе вы провели $totalWorkouts ${getWorkoutWord(totalWorkouts)}, из них:",
+            text = "$periodText вы провели $totalWorkouts ${getWorkoutWord(totalWorkouts)}, из них:",
             style = TextStyle(
                 fontFamily = RobotoFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal,
+                fontSize = 17.sp,
                 color = Color.Black
             )
         )
@@ -471,11 +496,12 @@ fun WeeklyWorkoutStats(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Диаграмма
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.size(120.dp)) {
+            Box(modifier = Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.size(112.dp-25.dp)) {
                     var startAngle = -90f
                     typeProgressList.forEach { (type, progress) ->
                         if (progress > 0f) {
@@ -485,7 +511,7 @@ fun WeeklyWorkoutStats(
                                 startAngle = startAngle,
                                 sweepAngle = sweep,
                                 useCenter = false,
-                                style = Stroke(width = 22f, cap = StrokeCap.Round)
+                                style = Stroke(width = 50f, cap = StrokeCap.Butt)
                             )
                             startAngle += sweep
                         }
@@ -493,21 +519,18 @@ fun WeeklyWorkoutStats(
                 }
             }
 
-            Spacer(modifier = Modifier.width(24.dp))
-
             // Легенда
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f).height(112.dp).padding(16.dp), verticalArrangement = Arrangement.Top) {
                 WorkoutType.entries.forEach { type ->
                     val count = typeCounts[type.displayName] ?: 0
                     if (count > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(RoundedCornerShape(3.dp))
+                                    .size(6.dp)
                                     .background(colorMap[type] ?: Color.Gray)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
                                 "$count ${type.displayName.lowercase()}",
                                 style = TextStyle(
@@ -518,13 +541,12 @@ fun WeeklyWorkoutStats(
                                 )
                             )
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Общая продолжительность тренировок: " +
                     "${if (hours > 0) "$hours часов " else ""}$minutes минут",
@@ -536,17 +558,272 @@ fun WeeklyWorkoutStats(
             )
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Выбрать другой интервал",
-            modifier = Modifier.clickable(onClick = onSelectInterval),
+            text = if (isSelected) "Скрыть календарь" else "Выберите интервал для просмотра тренировок",
+            modifier = Modifier.clickable(onClick = {
+                isSelected = !isSelected
+                }
+            ),
             style = TextStyle(
                 fontFamily = RobotoFontFamily,
                 fontWeight = FontWeight.Normal,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontStyle = FontStyle.Italic,
                 color = Color(0xFF7F7F7F)
             )
         )
+
+        if (isSelected) {
+            MultiSelectCalendar(
+                initiallySelectedStart = rangeStart,
+                initiallySelectedEnd = rangeEnd,
+                onRangeSelected = { start, end ->
+                    onDateRangeSelected(start, end)
+                }
+            )
+        }
+
+    }
+}
+
+@Composable
+fun MultiSelectCalendar(
+    modifier: Modifier = Modifier,
+    initiallySelectedStart: LocalDate? = null,
+    initiallySelectedEnd: LocalDate? = null,
+    onRangeSelected: (LocalDate?, LocalDate?) -> Unit = { _, _ -> }
+) {
+    val monthYearFormatter = DateTimeFormatter.ofPattern("LLLL yyyy")
+
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+
+    var selectedStart by remember { mutableStateOf(initiallySelectedStart) }
+    var selectedEnd by remember { mutableStateOf(initiallySelectedEnd) }
+    val daysOfWeek = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
+
+    // нахождение первого дня для сетки календаря
+    val firstDayOfMonth = currentMonth.atDay(1)
+    val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value + 6) % 7
+    val firstGridDate = firstDayOfMonth.minusDays(firstDayOfWeek.toLong())
+
+    // Всегда 6 недель в месяце (6*7 = 42 ячейки)
+    val days = List(42) { firstGridDate.plusDays(it.toLong()) }
+
+    fun isInRange(date: LocalDate): Boolean {
+        if (selectedStart != null && selectedEnd != null) {
+            return (date.isAfter(selectedStart) && date.isBefore(selectedEnd)) ||
+                    date == selectedStart || date == selectedEnd
+        }
+        return false
+    }
+
+    Column(modifier = modifier) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = {
+                currentMonth = currentMonth.minusMonths(1)
+            }) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_arrow_left),
+                    contentDescription = null
+                )
+            }
+            Text(
+                text = currentMonth.format(monthYearFormatter).replaceFirstChar { it.uppercase() },
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 18.sp
+                ),
+                color = Color.Black
+            )
+            IconButton(onClick = {
+                currentMonth = currentMonth.plusMonths(1)
+            }) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_arrow_left),
+                    contentDescription = null,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = -1f
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        // Дни недели
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ){
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                daysOfWeek.forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.size(32.dp),
+                        style = TextStyle(
+                            fontFamily = RobotoFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp
+                        ),
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            Alignment.Center
+        ){
+            Column{
+                for (week in 0 until 6) {
+                    Row {
+                        for (dayIdx in 0 .. 6) {
+                            val date = days[week * 7 + dayIdx]
+                            val inCurrentMonth = date.month == currentMonth.month
+
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when {
+                                            date == selectedStart || date == selectedEnd -> Color(0xFFFDD500)
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .border(
+                                        width = if (isInRange(date)) 1.dp else 0.dp,
+                                        color = if (isInRange(date)) Color(0xFFFDD500) else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable {
+                                        if (selectedStart == null || (selectedStart != null && selectedEnd != null)) {
+                                            selectedStart = date
+                                            selectedEnd = null
+                                        } else {
+                                            if (date.isBefore(selectedStart)) {
+                                                selectedEnd = selectedStart
+                                                selectedStart = date
+                                            } else if (date == selectedStart) {
+                                                selectedStart = null
+                                                selectedEnd = null
+                                            } else {
+                                                selectedEnd = date
+                                            }
+                                        }
+                                        onRangeSelected(selectedStart, selectedEnd)
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = date.dayOfMonth.toString(),
+                                    color = if (inCurrentMonth) Color.Black else Color.LightGray,
+                                    style = TextStyle(
+                                        fontFamily = RobotoFontFamily,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 15.sp
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SuccessMessage() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Box(
+            modifier = Modifier
+                .width(270.dp)
+                .height(34.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.White)
+                .padding(horizontal = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_check),
+                    contentDescription = "Success",
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    "Тренировка успешно добавлена",
+                    style = TextStyle(
+                        fontFamily = RobotoFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 12.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+        }
+    }
+}
+
+fun formatDayHeader(date: LocalDate, today: LocalDate = LocalDate.now()): String {
+    return when {
+        date == today -> "Сегодня"
+        date == today.minusDays(1) -> "Вчера"
+        date == today.plusDays(1) -> "Завтра"
+        else -> {
+            val startOfWeek = today.with(java.time.DayOfWeek.MONDAY)
+            val endOfWeek = startOfWeek.plusDays(6)
+
+            if (date in startOfWeek..endOfWeek) {
+                // Только день недели для текущей недели
+                when (date.dayOfWeek) {
+                    java.time.DayOfWeek.MONDAY -> "Понедельник"
+                    java.time.DayOfWeek.TUESDAY -> "Вторник"
+                    java.time.DayOfWeek.WEDNESDAY -> "Среда"
+                    java.time.DayOfWeek.THURSDAY -> "Четверг"
+                    java.time.DayOfWeek.FRIDAY -> "Пятница"
+                    java.time.DayOfWeek.SATURDAY -> "Суббота"
+                    java.time.DayOfWeek.SUNDAY -> "Воскресенье"
+                    else -> date.format(DateTimeFormatter.ofPattern("EEEE"))
+                }
+            } else {
+                // Полный формат Понедельник, 10.11.2025 для дат не в текущей недели
+                val dayName = when (date.dayOfWeek) {
+                    java.time.DayOfWeek.MONDAY -> "Понедельник"
+                    java.time.DayOfWeek.TUESDAY -> "Вторник"
+                    java.time.DayOfWeek.WEDNESDAY -> "Среда"
+                    java.time.DayOfWeek.THURSDAY -> "Четверг"
+                    java.time.DayOfWeek.FRIDAY -> "Пятница"
+                    java.time.DayOfWeek.SATURDAY -> "Суббота"
+                    java.time.DayOfWeek.SUNDAY -> "Воскресенье"
+                    else -> date.format(DateTimeFormatter.ofPattern("EEEE"))
+                }
+                val formattedDate = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                "$dayName, $formattedDate"
+            }
+        }
     }
 }
