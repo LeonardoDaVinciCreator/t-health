@@ -2,9 +2,7 @@ package com.olegf.thealthback.web.controller;
 
 import com.olegf.thealthback.domain.entity.Training;
 import com.olegf.thealthback.domain.service.TrainingService;
-import com.olegf.thealthback.web.dto.TrainingCreateDto;
-import com.olegf.thealthback.web.dto.TrainingSearchCriteria;
-import com.olegf.thealthback.web.dto.TrainingStatsDto;
+import com.olegf.thealthback.web.dto.TrainingApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,13 +47,5 @@ public class TrainingController {
             @RequestParam(required = false) LocalDateTime end
     ) {
         return trainingService.getStats(userId, start, end);
-    }
-
-
-    @PostMapping("/user/{userId}/training")
-    public List<Training> getTrainingsByExerciseName(
-            @RequestBody TrainingSearchCriteria criteria,
-            @PathVariable Long userId) {
-        return trainingService.getByCriteria(userId, criteria);
     }
 }

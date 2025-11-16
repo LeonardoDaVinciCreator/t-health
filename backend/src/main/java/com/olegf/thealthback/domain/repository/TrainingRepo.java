@@ -11,10 +11,11 @@ import java.util.List;
 public interface TrainingRepo extends CrudRepository<Training, Long> {
     List<Training> findAllByUserId(Long userId);
 
-    @Query("""
-    select * from training where user_id = :userId
-    left join exercises on exercises.training_id = training.id
-    where exercices.title = :exerciseTitle
-""")
-    List<Training> findByExerciseTitle(Long userId, String exerciseTitle);
+    //TODO: rewrite without using interval function
+    @Query(
+            """
+select * from trainings as t where t.user_id = :userId and (t.date >= now() - interval ':interval');
+"""
+    )
+    List<Training> getStats(Long userId, String interval);
 }
