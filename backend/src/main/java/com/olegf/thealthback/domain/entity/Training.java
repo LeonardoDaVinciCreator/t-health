@@ -1,5 +1,6 @@
 package com.olegf.thealthback.domain.entity;
 
+import com.olegf.thealthback.web.dto.TrainingApi;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

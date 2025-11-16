@@ -6,7 +6,6 @@ import com.olegf.thealthback.web.dto.TrainingApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -16,7 +15,7 @@ public class TrainingController {
     private final TrainingService trainingService;
 
     @PostMapping
-    public Training createTraining(@RequestBody TrainingCreateDto createDto) {
+    public Training createTraining(@RequestBody TrainingApi.CreateDto createDto) {
         return trainingService.create(createDto);
     }
 
@@ -30,8 +29,8 @@ public class TrainingController {
         return trainingService.getTrainingById(id);
     }
 
-    @PutMapping("/{id}")
-    public Training updateTraining(@PathVariable Long id, @RequestBody TrainingCreateDto updateDto) {
+    @PatchMapping("/{id}")
+    public Training updateTraining(@PathVariable Long id, @RequestBody TrainingApi.UpdateDto updateDto) {
         return trainingService.update(id, updateDto);
     }
 
@@ -41,11 +40,10 @@ public class TrainingController {
     }
 
     @GetMapping("/user/{userId}/stats")
-    public TrainingStatsDto getUserTrainingStats(
+    public List<Training> getUserTrainingStats(
             @PathVariable Long userId,
-            @RequestParam(required = false) LocalDateTime start,
-            @RequestParam(required = false) LocalDateTime end
+            @RequestBody TrainingApi.Interval interval
     ) {
-        return trainingService.getStats(userId, start, end);
+        return trainingService.getStats(userId, interval);
     }
 }

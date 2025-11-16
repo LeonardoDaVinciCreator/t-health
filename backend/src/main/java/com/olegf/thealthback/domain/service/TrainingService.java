@@ -41,21 +41,14 @@ public class TrainingService {
 
     public void delete(Long id) {
         if(!trainingRepo.existsById(id)) throw new EntityNotFoundException("Training not found with id " + id);
-
-        programRepo.findAllByTrainingId(id)
-                .forEach(p -> programRepo.deleteById(p.getId()));
         trainingRepo.deleteById(id);
     }
 
     @Transactional(readOnly = true)
-    public TrainingStatsDto getStats(Long userId, LocalDateTime start, LocalDateTime end) {
+    public List<Training> searchByCriteria(Long userId, TrainingApi.SearchCriteria criteria) {
         var trainings = trainingRepo.findAllByUserId(userId);
 
-        var totalPrograms = filtered.stream()
-                .mapToInt(t -> t.getExercise().size())
-                .sum();
-
-        return new TrainingStatsDto(filtered.size(), totalPrograms);
+        return trainings;
     }
 
     @Transactional(readOnly = true)
