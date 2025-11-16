@@ -30,7 +30,7 @@ public class OtpService {
     public void checkOtp(Otp.Check check) {
         if (!phoneToOtp.containsKey(check.getPhone())) { throw new OtpException.OtpNotExistsException(); }
         var existingOtp = phoneToOtp.get(check.getPhone());
-        
+
         if (existingOtp.isExpired(otpProps.getInterval())) { throw new OtpException.OtpExpiredException(); }
         if (existingOtp.getAttempts() > otpProps.getAttemptsThreshold()) { throw new OtpException.OtpAttemptsExceeded(); }
 
@@ -38,7 +38,7 @@ public class OtpService {
             existingOtp.incrementAttempts();
             throw new OtpException.OtpMismatchException();
         }
-        
+
         phoneToOtp.remove(check.getPhone());
     }
 

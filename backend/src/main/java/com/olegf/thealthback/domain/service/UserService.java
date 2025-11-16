@@ -31,6 +31,8 @@ public class UserService {
 
     public Activity createActivity(long userId, ActivityCreateDto activityCreateDto) {
         var activity = Activity.from(activityCreateDto);
+        activity.setUserId(userId);
+        activity.setDate(LocalDateTime.now());
         return activityRepo.save(activity);
     }
 
@@ -41,10 +43,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Activity> getUserActivities(long userId, LocalDateTime date, Pageable pageable) {
-        return date == null
-                ? activityRepo.findByUserId(userId, pageable)
-                : activityRepo.findByDate(userId, date, pageable);
+    public List<Activity> getUserActivities(long userId, LocalDateTime date) {
+        if (date == null) return activityRepo.findByUserId(userId);
+
+        LocalDateTime start = date.toLocalDate().atStartOfDay();
+        LocalDateTime end = start.plusDays(1);
+
+        return activityRepo.findByDate(userId, start, end);
     }
 
     @Transactional(readOnly = true)

@@ -15,4 +15,6 @@ public interface UserRepo extends CrudRepository<AppUser, Long> {
         where CAST(app_user.phone as text) = :phone
     """)
     Optional<AppUser> findByPhone(String phone);
+
+
 }

@@ -9,7 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.Base64;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 @Data
 @Table("app_users")
@@ -21,7 +21,7 @@ public class AppUser {
     private byte[] phone;
 
     @MappedCollection(idColumn = "user_id")
-    private List<Activity> activities;
+    private Set<Activity> activities;
 
     public String getPhone() {
         return new String(Base64.getDecoder().decode(
@@ -39,7 +39,7 @@ public class AppUser {
                 null,
                 createDto.getUsername(),
                 encodedPhone,
-                Collections.emptyList()
+                Collections.emptySet()
         );
     }
 }
