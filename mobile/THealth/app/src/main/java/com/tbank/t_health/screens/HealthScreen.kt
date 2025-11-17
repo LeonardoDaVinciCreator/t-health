@@ -86,6 +86,7 @@ import com.tbank.t_health.data.HealthDataMonth
 import com.tbank.t_health.data.toWeeklyGroups
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import androidx.compose.ui.graphics.graphicsLayer
+import com.tbank.t_health.constants.NavigationDestinations
 import com.tbank.t_health.data.model.ActivityFullData
 import com.tbank.t_health.data.model.ActivityGetData
 import com.tbank.t_health.data.repository.WorkoutRepository
@@ -1095,10 +1096,12 @@ fun MenuSection(navController: NavController, calories:Double) {
         modifier = Modifier.fillMaxWidth()
     ) {
         MenuItem("Тренировка","-${calories.toInt()}", onClick = {
-            navController.navigate("workout")
+//            navController.navigate("workout")
+            navController.navigate(NavigationDestinations.WORKOUT)
             },
             onClickAdd = {
-                navController.navigate("addWorkout")
+                //navController.navigate("addWorkout")
+                navController.navigate(NavigationDestinations.ADD_WORKOUT)
             }
         )
 

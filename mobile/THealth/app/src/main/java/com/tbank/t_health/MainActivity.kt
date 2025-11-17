@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavHostController
+import com.tbank.t_health.constants.NavigationDestinations
+import com.tbank.t_health.constants.NavigationTabs
 import com.tbank.t_health.screens.*
 import com.tbank.t_health.screens.auth.AuthScreen
 import com.tbank.t_health.screens.health.AddWorkoutScreen
@@ -25,7 +28,6 @@ import com.tbank.t_health.ui.theme.THealthTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var userPrefs: UserPrefs
-    private var selectedFooterIndex by mutableStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,38 +37,29 @@ class MainActivity : ComponentActivity() {
         setContent {
             THealthTheme {
                 val navController = rememberNavController()
-                var showFooter by remember { mutableStateOf(true) }
-                var showHeader by remember { mutableStateOf(true) }
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = currentBackStackEntry?.destination?.route
 
-                LaunchedEffect(navController) {
-                    navController.currentBackStackEntryFlow.collect { entry ->
-                        val currentRoute = entry.destination.route
-                        showFooter = currentRoute != "auth"
-                        showHeader = currentRoute != "auth"
-                    }
-                }
+                // определение видимости header и footer
+                val showHeaderAndFooter = currentDestination != NavigationDestinations.AUTH
+                val currentTab = NavigationTabs.AllTabs.find { it.id == currentDestination }
 
                 Scaffold(
-                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding(),
                     topBar = {
-                        if (showHeader) {
+                        if (showHeaderAndFooter) {
                             Header()
                         }
                     },
                     bottomBar = {
-                        if (showFooter) {
+                        if (showHeaderAndFooter) {
                             Footer(
-                                navController,
-                                selectedIndex = selectedFooterIndex,
-                                onItemSelected = { index ->
-                                    selectedFooterIndex = index
-                                    when (index) {
-                                        0 -> navigateSingleTop(navController, "health")
-                                        1 -> navigateSingleTop(navController, "achievements")
-                                        2 -> navigateSingleTop(navController, "posts")
-                                        3 -> navigateSingleTop(navController, "chat")
-                                        4 -> navigateSingleTop(navController, "profile")
-                                    }
+                                navController = navController,
+                                currentDestination = currentDestination ?: NavigationDestinations.HEALTH,
+                                onItemSelected = { destination ->
+                                    navigateSingleTop(navController, destination)
                                 }
                             )
                         }
@@ -74,23 +67,43 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = if (userPrefs.isUserLoggedIn()) "health" else "auth",
+                        startDestination = if (userPrefs.isUserLoggedIn()) {
+                            NavigationDestinations.HEALTH
+                        } else {
+                            NavigationDestinations.AUTH
+                        },
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable("health") { HealthScreen(navController); selectedFooterIndex = 0 }
-                        composable("achievements") { AchievementsScreen(navController); selectedFooterIndex = 1 }
-                        composable("posts") { PostsScreen(navController); selectedFooterIndex = 2 }
-                        composable("chat") { ChatScreen(navController); selectedFooterIndex = 3 }
-                        composable("profile") { ProfileScreen(navController); selectedFooterIndex = 4 }
+                        // Основные экраны
+                        composable(NavigationDestinations.HEALTH) {
+                            HealthScreen(navController)
+                        }
+                        composable(NavigationDestinations.ACHIEVEMENTS) {
+                            AchievementsScreen(navController)
+                        }
+                        composable(NavigationDestinations.POSTS) {
+                            PostsScreen(navController)
+                        }
+                        composable(NavigationDestinations.CHAT) {
+                            ChatScreen(navController)
+                        }
+                        composable(NavigationDestinations.PROFILE) {
+                            ProfileScreen(navController)
+                        }
 
-                        composable("workout") { WorkoutScreen(navController) }
-                        composable("addWorkout") { AddWorkoutScreen(navController) }
+                        // Второстепенные экраны
+                        composable(NavigationDestinations.WORKOUT) {
+                            WorkoutScreen(navController)
+                        }
+                        composable(NavigationDestinations.ADD_WORKOUT) {
+                            AddWorkoutScreen(navController)
+                        }
 
-                        composable("auth") {
+                        composable(NavigationDestinations.AUTH) {
                             AuthScreen(
                                 onLoginSuccess = {
-                                    navController.navigate("health") {
-                                        popUpTo("auth") { inclusive = true }
+                                    navController.navigate(NavigationDestinations.HEALTH) {
+                                        popUpTo(NavigationDestinations.AUTH) { inclusive = true }
                                     }
                                 }
                             )
@@ -103,11 +116,12 @@ class MainActivity : ComponentActivity() {
 }
 
 private fun navigateSingleTop(navController: NavHostController, route: String) {
-    val currentRoute = navController.currentDestination?.route
-    if (currentRoute != route) {
-        navController.navigate(route) {
-            popUpTo("health") { inclusive = false }
-            launchSingleTop = true
+    navController.navigate(route) {
+        popUpTo(navController.graph.startDestinationId) {
+            saveState = true
         }
+        restoreState = true
+        // нет одинаковых экранов
+        launchSingleTop = true
     }
 }

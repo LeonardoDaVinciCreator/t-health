@@ -1,3 +1,4 @@
+// components/Footer.kt
 package com.tbank.t_health.ui.components
 
 import androidx.compose.foundation.Image
@@ -14,18 +15,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.tbank.t_health.R
 import com.tbank.t_health.ui.theme.FooterTypography
+import com.tbank.t_health.constants.NavigationTabs
+import com.tbank.t_health.constants.NavigationDestinations
 
 @Composable
-fun Footer(navController: NavController, selectedIndex: Int, onItemSelected: (Int) -> Unit) {
-
-    val items = listOf(
-        FooterItemData("ic_home", "Главная", 21, 19, 0),
-        FooterItemData("ic_trophy", "Достижения", 25, 23, 1),
-        FooterItemData("ic_posts", "Лента", 25, 25, 2),
-        FooterItemData("ic_chat", "Чат", 25, 25, 3),
-        FooterItemData("ic_profile", "Профиль", 30, 30, 4)
-    )
-
+fun Footer(
+    navController: NavController,
+    currentDestination: String,
+    onItemSelected: (String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -34,22 +32,18 @@ fun Footer(navController: NavController, selectedIndex: Int, onItemSelected: (In
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items.forEach { item ->
+        NavigationTabs.AllTabs.forEach { item ->
             FooterItem(
-                baseIconName = item.iconName,
-                label = item.label,
-                iconWidth = item.iconDefaultWidth,
-                iconHeight = item.iconDefaultHeight,
-                isSelected = selectedIndex == item.index,
+                item = item,
+                isSelected = currentDestination == item.id,
                 onClick = {
-                    onItemSelected(item.index)
-                    when (item.index) {
-                        0 -> navController.navigate("health")
-                        1 -> navController.navigate("achievements")
-                        2 -> navController.navigate("posts")
-                        3 -> navController.navigate("chat")
-                        4 -> navController.navigate("profile")
-                        else -> navController.navigate("health")
+                    onItemSelected(item.id)
+                    navController.navigate(item.id) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        restoreState = true
+                        launchSingleTop = true
                     }
                 }
             )
@@ -58,26 +52,23 @@ fun Footer(navController: NavController, selectedIndex: Int, onItemSelected: (In
 }
 
 data class FooterItemData(
+    val id: String,
     val iconName: String,
     val label: String,
     val iconDefaultWidth: Int,
-    val iconDefaultHeight: Int,
-    val index: Int
+    val iconDefaultHeight: Int
 )
 
 @Composable
 fun FooterItem(
-    baseIconName: String,
-    label: String,
-    iconWidth: Int,
-    iconHeight: Int,
+    item: FooterItemData,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val iconResId = context.resources.getIdentifier(
-        if (isSelected) "${baseIconName}2" else baseIconName,
+        if (isSelected) "${item.iconName}2" else item.iconName,
         "drawable",
         context.packageName
     )
@@ -96,12 +87,15 @@ fun FooterItem(
         ) {
             Image(
                 painter = painterResource(id = iconResId),
-                contentDescription = label,
-                modifier = Modifier.size(iconWidth.dp, iconHeight.dp)
+                contentDescription = item.label,
+                modifier = Modifier.size(
+                    width = item.iconDefaultWidth.dp,
+                    height = item.iconDefaultHeight.dp
+                )
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = label,
+                text = item.label,
                 style = FooterTypography.headlineLarge,
                 color = if (isSelected) Color.Black else Color.Gray
             )
