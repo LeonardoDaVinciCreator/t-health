@@ -1,5 +1,6 @@
 package com.tbank.t_health.screens
 
+import UserPrefs
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
@@ -78,13 +79,18 @@ import com.tbank.composefoodtracker.services.ExerciseService
 import com.tbank.composefoodtracker.services.StepCounterService
 import com.tbank.t_health.R
 import com.tbank.t_health.data.ActiveStorage
-import com.tbank.t_health.data.ActivityRepository
+import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.ui.theme.StatsTypography
 import kotlinx.coroutines.launch
 import com.tbank.t_health.data.HealthDataMonth
 import com.tbank.t_health.data.toWeeklyGroups
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import androidx.compose.ui.graphics.graphicsLayer
+import com.tbank.t_health.data.model.ActivityFullData
+import com.tbank.t_health.data.model.ActivityGetData
+import com.tbank.t_health.data.repository.WorkoutRepository
+import kotlinx.coroutines.delay
+import java.time.LocalDate
 
 
 // Разрешения
@@ -154,25 +160,42 @@ fun HealthScreen(navController: NavController) {
             permissionRequested = true
             permissionLauncher.launch(PERMISSIONS)
         } else if (granted.containsAll(PERMISSIONS)) {
-            steps = stepService.getStepsForToday()//+
-            activeMinutes = stepService.getActiveMinutesForToday().toInt() + (activeStorage.getActiveSeconds()/60)//-+ примерно без скорости, просто кол-во шагов / 100 = минуты
-
+            // текущие данные шагов и активности
+            steps = stepService.getStepsForToday()
+            activeMinutes = stepService.getActiveMinutesForToday().toInt() + (activeStorage.getActiveSeconds() / 60)
             activeCalories = activeStorage.getCalories()
-            calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeCalories//+, примерно без веса, роста, скорости, но итого за день все правильно, так как обновление в 00:00 данных
-
-
-            yesterdaySteps = stepService.getStepsForDate(
-                java.time.LocalDate.now().minusDays(1)
-            )
-
+            calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeCalories
+            yesterdaySteps = stepService.getStepsForDate(LocalDate.now().minusDays(1))
             showMessage = steps > yesterdaySteps
+
+            // Получаем пользователя
+            val userPrefs = UserPrefs(context)
+            val user = userPrefs.getUser()
+
+            if (user != null && user.id != null) {
+                coroutineScope.launch {
+                    try {
+                        // сбор и сохранение локально
+                        activityRepo.collectAndSaveDailyData(stepService, activeStorage, user.id!!)
+
+                        // отправка на сервер
+                        activityRepo.syncToServer(user.id!!, clearAfterSync = true)
+                        delay(300)
+
+                        val serverActivities = activityRepo.getUserActivitiesFromServer(user.id!!)
+                        Log.d("HealthScreen", "User from server: ${user.username}, phone=${user.phone}")
+                        Log.d("HealthScreen", "Server activities count=${serverActivities.size}")
+                        for (a in serverActivities) {
+                            Log.d("HealthScreen", "Activity: type=${a.type}, value=${a.value}, calories=${a.calories}, data=${a.date}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("HealthScreen", "Sync error: ${e.message}")
+                    }
+                }
+            } else {
+                Log.e("HealthScreen", "⚠️ User not found — skipping sync")
+            }
         }
-//        // данные за вчера и сохранение
-//        // вызвать по расписанию в 00:00 для записи на сервер
-//        coroutineScope.launch {
-//            activityRepo.collectAndSaveYesterdayData(stepService, activeStorage)//сохранение данных в локальный json
-//           // activityRepo.syncToServer() //пока нет серввера
-//        }
     }
 
     Log.d("StepCounter", "Активных минут сегодня: $activeMinutes")
@@ -251,6 +274,8 @@ fun HealthScreen(navController: NavController) {
             //MenuSection()
 
             MenuSection(navController, activeCalories)
+
+
 
 
         }
@@ -760,12 +785,67 @@ fun StepsChart2(
     var currentChartType by remember { mutableStateOf(ChartType.STEPS) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
 
-    val allHealthData = HealthDataMonth()
-    val weeklyData = allHealthData.toWeeklyGroups()
+    val context = LocalContext.current
+    val activityRepo = remember { ActivityRepository(context) }
+    val userPrefs = remember { UserPrefs(context) }
 
-    val weekDates = weeklyData.map { week ->
-        week.map {
-            "${it.date.dayOfMonth.toString().padStart(2, '0')}.${it.date.monthValue.toString().padStart(2, '0')}"
+    var monthlyServerData by remember { mutableStateOf<List<ActivityFullData>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        val user = userPrefs.getUser()
+        if (user?.id != null) {
+            try {
+                val monthActivities: List<ActivityFullData> = activityRepo.getUserActivitiesFor28Days(user.id, LocalDate.now())
+                monthlyServerData = monthActivities
+                Log.d("ACTIVITY_MONTH", "monthActivities=$monthActivities")
+
+                monthActivities.forEach { a ->
+                    Log.d(
+                        "ACTIVITY_MONTH",
+                        "steps=${a.steps}, activeMinutes=${a.activeMinutes}, calories=${a.calories}, date=${a.date}"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("StepsChart2", "Error fetching monthly activities: ${e.message}")
+            }
+        }
+    }
+
+    // разбика данных 28 дней на недели
+    val weeklyData = remember(monthlyServerData) {
+        if (monthlyServerData.size == 28) {
+            monthlyServerData.chunked(7)
+        } else {
+            // проверка в getUserActivitiesFor28Days, но не дает все равно без проверки
+            List(4) { weekIndex ->
+                List(7) { dayIndex ->
+                    val date = LocalDate.now()
+                        .with(java.time.DayOfWeek.SUNDAY)
+                        .minusDays(27 - (weekIndex * 7 + dayIndex).toLong())
+                    ActivityFullData(
+                        steps = 0,
+                        activeMinutes = 0,
+                        calories = 0.0,
+                        date = date
+                    )
+                }
+            }
+        }
+    }
+
+    //текущая неделя как последняя
+    LaunchedEffect(weeklyData) {
+        if (weeklyData.isNotEmpty()) {
+            currentWeek = weeklyData.size - 1
+        }
+    }
+
+    // Отформатированные даты для диаграммы
+    val weekDates = remember(weeklyData) {
+        weeklyData.map { week ->
+            week.map {
+                "${it.date.dayOfMonth.toString().padStart(2, '0')}.${it.date.monthValue.toString().padStart(2, '0')}"
+            }
         }
     }
 

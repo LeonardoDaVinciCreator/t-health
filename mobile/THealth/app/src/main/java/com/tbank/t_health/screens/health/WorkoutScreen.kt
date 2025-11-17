@@ -1,6 +1,5 @@
 package com.tbank.t_health.screens
 
-import WorkoutType
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -32,8 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.tbank.t_health.R
-import com.tbank.t_health.data.ActivityRepository
-import com.tbank.t_health.data.WorkoutRepository
+import com.tbank.t_health.data.repository.ActivityRepository
+import com.tbank.t_health.data.repository.WorkoutRepository
 import com.tbank.t_health.data.model.ActivityData
 import com.tbank.t_health.data.model.WorkoutData
 import com.tbank.t_health.ui.theme.RobotoFontFamily
@@ -46,6 +45,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ColorFilter.Companion.tint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
+import com.tbank.t_health.data.model.ActivityType
+import com.tbank.t_health.data.model.WorkoutType
+import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
@@ -78,7 +81,7 @@ fun WorkoutScreen(navController: NavController) {
     var selectedDateRange by remember { mutableStateOf<Pair<LocalDate?, LocalDate?>?>(initialWeekRange) }
 
     var workoutRunning by remember { mutableStateOf(false) }
-    var activeWorkoutId by remember { mutableStateOf<String?>(null) }
+    var activeWorkoutId by remember { mutableStateOf<Long?>(null) }
     var remainingSeconds by remember { mutableStateOf(0) }
     var workouts by remember { mutableStateOf<List<WorkoutData>>(emptyList()) }
 
@@ -137,18 +140,18 @@ fun WorkoutScreen(navController: NavController) {
                 val filteredWorkouts = if (selectedDateRange?.first != null || selectedDateRange?.second != null) {
                     val (start, end) = selectedDateRange!!
                     workouts.filter { workout ->
-                        val date = LocalDate.parse(workout.plannedDate)
+                        val date = workout.plannedDate ?: return@filter false
                         (start == null || !date.isBefore(start)) &&
                                 (end == null || !date.isAfter(end))
                     }
-                } else {
-                    workouts
-                }
+                } else workouts
+
 
                 val groupedByDay = filteredWorkouts
-                    .map { it to LocalDate.parse(it.plannedDate) }
+                    .mapNotNull { it.plannedDate?.let { date -> it to date } }
                     .sortedBy { it.second }
                     .groupBy { it.second }
+
 
                 if (workouts.isEmpty()) {
                     item{
@@ -198,6 +201,8 @@ fun WorkoutScreen(navController: NavController) {
 
                         items(workoutsInDay) { workout ->
                             val isRunning = workoutRunning && activeWorkoutId == workout.id
+
+
                             WorkoutCard(
                                 workout = workout,
                                 isRunning = isRunning,
@@ -205,7 +210,7 @@ fun WorkoutScreen(navController: NavController) {
                                 onClick = {
                                     coroutineScope.launch {
                                         val today = LocalDate.now()
-                                        val plannedDate = LocalDate.parse(workout.plannedDate)
+                                        val plannedDate = workout.plannedDate
 
                                         // Проверка даты
                                         if (today != plannedDate) {
@@ -227,8 +232,9 @@ fun WorkoutScreen(navController: NavController) {
                                                 type = workout.type,
                                                 durationSeconds = workout.durationSeconds,
                                                 calories = workout.calories,
-                                                plannedDate = LocalDate.parse(workout.date)
+                                                plannedDate = workout.plannedDate ?: LocalDate.now()
                                             )
+
 
                                             Log.d("WorkoutScreen", "Начата тренировка: ${workout.name}")
 
@@ -242,21 +248,27 @@ fun WorkoutScreen(navController: NavController) {
                                                 val finished = exerciseService.finishWorkout()
 
 
-                                                finished?.let {
+                                                finished?.let{
                                                     activityRepo.saveActivityLocally(
                                                         ActivityData(
                                                             id = it.id,
-                                                            activeMinutes = it.durationSeconds / 60,
+                                                            userId = workout.userId,
+                                                            value = BigDecimal(workout.durationSeconds.toDouble()),
+                                                            type = ActivityType.TRAINING,
                                                             calories = it.calories,
-                                                            date = LocalDate.now()
+                                                            //date = LocalDateTime.now()
                                                         )
                                                     )
                                                 }
 
 
+
+
                                                 workoutRunning = false
                                                 activeWorkoutId = null
-                                                workoutRepo.markWorkoutCompleted(workout.id)
+                                                workout.id?.let { id ->
+                                                    workoutRepo.markWorkoutCompleted(id)
+                                                }
                                                 workouts = workoutRepo.loadLocalWorkouts()
                                             }
                                         } else if (activeWorkoutId == workout.id) {
@@ -264,18 +276,23 @@ fun WorkoutScreen(navController: NavController) {
                                             activeWorkoutId = null
                                             val finished = exerciseService.finishWorkout()
 
-                                            finished?.let {
+                                            finished?.let{
                                                 activityRepo.saveActivityLocally(
                                                     ActivityData(
                                                         id = it.id,
-                                                        activeMinutes = it.durationSeconds / 60,
+                                                        userId = workout.userId,
+                                                        value = BigDecimal(workout.durationSeconds.toDouble()),
+                                                        type = ActivityType.TRAINING,
                                                         calories = it.calories,
-                                                        date = LocalDate.now()
+                                                        //date = LocalDateTime.now()
                                                     )
                                                 )
                                             }
 
-                                            workoutRepo.markWorkoutCompleted(workout.id)
+                                            workout.id?.let { id ->
+                                                workoutRepo.markWorkoutCompleted(id)
+                                            }
+
                                             workouts = workoutRepo.loadLocalWorkouts()
                                         }
                                     }
@@ -441,11 +458,12 @@ fun WeeklyWorkoutStats(
     }
 
     val workoutsInPeriod = workouts.filter {
-        val workoutDate = LocalDate.parse(it.plannedDate)
+        val workoutDate = it.plannedDate ?: return@filter false
         (rangeStart == null || !workoutDate.isBefore(rangeStart)) &&
                 (rangeEnd == null || !workoutDate.isAfter(rangeEnd)) &&
                 it.isCompleted
     }
+
 
     val totalWorkouts = workoutsInPeriod.size
     val typeCounts = workoutsInPeriod.groupingBy { it.type }.eachCount()

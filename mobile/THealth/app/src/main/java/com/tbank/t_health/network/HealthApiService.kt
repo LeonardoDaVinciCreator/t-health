@@ -5,23 +5,33 @@ import retrofit2.http.*
 
 interface HealthApiService {
 
-    @GET("activity")
-    suspend fun getAllActivities(): List<ActivityData>
+    // ----------- USERS -----------
 
-    @GET("activity/{id}")
-    suspend fun getActivityById(@Path("id") id: String): ActivityData
+    @GET("users")
+    suspend fun getAllUsers(): List<UserData>
 
-    @POST("activity")
-    suspend fun postActivity(@Body activity: ActivityData)
+    @GET("users/{id}")
+    suspend fun getUserById(@Path("id") id: Long): UserData
 
-    @PUT("activity/{id}")
-    suspend fun updateActivity(
-        @Path("id") id: String,
+    @POST("users")
+    suspend fun createUser(@Body user: UserData): UserData
+
+
+    // ----------- ACTIVITIES -----------
+
+    @GET("users/{userId}/activities")
+    suspend fun getUserActivities(
+        @Path("userId") userId: Long,
+        @Query("date") date: String? = null
+    ): List<ActivityGetData>
+
+    @POST("users/{userId}/activitie" +
+            "s")
+    suspend fun createActivity(
+        @Path("userId") userId: Long,
         @Body activity: ActivityData
-    )
+    ): ActivityData
 
-    @DELETE("activity/{id}")
-    suspend fun deleteActivity(@Path("id") id: String)
 
 
 

@@ -1,7 +1,7 @@
 package com.tbank.t_health.screens.health
 
 
-import WorkoutType
+import UserPrefs
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,12 +34,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.tbank.t_health.R
-import com.tbank.t_health.data.WorkoutRepository
+import com.tbank.t_health.data.repository.WorkoutRepository
 import com.tbank.t_health.data.model.WorkoutData
+import com.tbank.t_health.data.model.WorkoutType
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -48,6 +50,7 @@ import java.util.*
 @Composable
 fun AddWorkoutScreen(navController: NavController) {
     val context = LocalContext.current
+    val userPrefs = remember { UserPrefs(context) }
     val workoutRepo = remember { WorkoutRepository(context) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -112,11 +115,12 @@ fun AddWorkoutScreen(navController: NavController) {
                     }
 
                     val localDate = try {
-                        LocalDate.parse(date, dateFormatter)
+                        LocalDate.parse(date, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
                     } catch (_: Exception) {
                         Toast.makeText(context, "Неверный формат даты", Toast.LENGTH_SHORT).show()
                         return@ExtendedFloatingActionButton
                     }
+
 
                     val totalSeconds = try {
                         val parts = durationMinutes.split(":").map { it.toIntOrNull() ?: 0 }
@@ -139,14 +143,19 @@ fun AddWorkoutScreen(navController: NavController) {
                     }
 
                     coroutineScope.launch {
+                        val user = userPrefs.getUser() // ✅ получаем пользователя
+                        if (user == null || user.id == null) {
+                            Toast.makeText(context, "Ошибка: пользователь не найден", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
                         val workout = WorkoutData(
-                            id = UUID.randomUUID().toString(),
+                            userId = user.id,
                             name = name,
                             type = type,
                             calories = calories.toDoubleOrNull() ?: 0.0,
                             durationSeconds = totalSeconds,
-                            date = localDate.toString(),
-                            plannedDate = localDate.toString(),
+                            plannedDate = localDate,
                             isCompleted = false
                         )
 

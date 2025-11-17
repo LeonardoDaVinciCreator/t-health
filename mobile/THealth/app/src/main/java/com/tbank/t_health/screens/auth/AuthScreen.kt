@@ -1,7 +1,7 @@
 package com.tbank.t_health.screens.auth
 
-import com.tbank.t_health.data.UserData
 import UserPrefs
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,10 +24,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tbank.t_health.R
+import com.tbank.t_health.data.model.UserData
 import com.tbank.t_health.ui.theme.AuthScreenTypography
 import com.tbank.t_health.ui.theme.THealthTheme
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
@@ -423,13 +425,15 @@ fun NicknameForm(
     userPrefs: UserPrefs,
     onLoginSuccess: () -> Unit
 ) {
-    AuthContainer(title = "Вход в T-Health") {
-        var nickname by remember { mutableStateOf("") }
-        var isError by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val authRepo = remember { com.tbank.t_health.data.repository.AuthRepository() }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    var nickname by remember { mutableStateOf("") }
+    var isError by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    AuthContainer(title = "Вход в T-Health") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             NicknameInputField(
                 nicknameText = nickname,
                 onNicknameChange = {
@@ -441,24 +445,58 @@ fun NicknameForm(
             Spacer(modifier = Modifier.width(3.dp))
 
             AuthButton {
-                val isValid = nickname.length >= 3 && nickname.all { ch -> ch.isLetterOrDigit() || ch == '_' }
+                val isValid = nickname.length >= 3 && nickname.all { it.isLetterOrDigit() || it == '_' }
 
-                if (isValid) {
-                    val userData = UserData(
-                        nickname = nickname,
-                        fullName = "—",
-                        phone = phone,
-                        code = code
-                    )
-                    userPrefs.saveUser(userData)
-                    onLoginSuccess()
+                Log.i("NicknameForm", "Нажата кнопка, nickname=$nickname, isValid=$isValid, isLoading=$isLoading")
+
+
+
+                if (isValid && !isLoading) {
+                    Log.i("NicknameForm", "Запуск scope.launch")
+                    isLoading = true
+                    scope.launch {
+                        try {
+                            val createdUser = authRepo.registerUser(
+                                nickname = nickname,
+                                phone = "+7$phone"
+                            )
+                            Log.i("AuthRepository", "Отправка запроса: nickname=$nickname, phone=$phone")
+
+
+                            userPrefs.saveUser(
+                                UserData(
+                                    id = createdUser.id,
+                                    username = createdUser.username,
+                                    phone = createdUser.phone
+                                )
+                            )
+
+
+                            onLoginSuccess()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            Log.e("NicknameForm", "Ошибка регистрации: ${e.message}", e)
+                            isError = true
+                        } finally {
+                            isLoading = false
+                        }
+                    }
                 } else {
                     isError = true
                 }
             }
         }
+
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .size(24.dp)
+            )
+        }
     }
 }
+
 
 
 @Composable

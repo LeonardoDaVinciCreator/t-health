@@ -1,5 +1,6 @@
 package com.tbank.composefoodtracker.services
 
+import UserPrefs
 import android.content.Context
 import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
@@ -15,6 +16,9 @@ import kotlin.math.max
 
 import androidx.health.connect.client.records.metadata.Metadata
 class ExerciseService(private val context: Context) {
+
+    val userPrefs = UserPrefs(context)
+    val user = userPrefs.getUser()
 
     private val activeStorage = ActiveStorage(context)
     private var currentWorkout: OngoingWorkout? = null
@@ -78,14 +82,19 @@ class ExerciseService(private val context: Context) {
         activeStorage.setActiveSeconds(newActiveSeconds)
         activeStorage.setCalories(newCalories)
 
+        if (user == null || user.id == null) {
+            Log.e("ExerciseService", "Ошибка: пользователь не найден")
+            return null
+        }
+
         val workoutData = WorkoutData(
-            id = workout.id,
+            userId = user.id,
             name = workout.name,
             type = workout.type,
             calories = calories,
             durationSeconds = durationSeconds,
-            date = date.toString(),
-            plannedDate = workout.plannedDate.toString(),
+            //date = date.atStartOfDay(),
+            plannedDate = workout.plannedDate,
             isCompleted = true
         )
 
