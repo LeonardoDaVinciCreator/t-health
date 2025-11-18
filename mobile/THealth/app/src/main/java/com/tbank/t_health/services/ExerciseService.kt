@@ -1,12 +1,12 @@
 package com.tbank.composefoodtracker.services
 
-import UserPrefs
+import com.tbank.t_health.data.local.UserPrefs
 import android.content.Context
 import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.units.Energy
-import com.tbank.t_health.data.ActiveStorage
+import com.tbank.t_health.data.local.ActiveStorage
 import com.tbank.t_health.data.model.WorkoutData
 import java.time.Instant
 import java.time.LocalDate

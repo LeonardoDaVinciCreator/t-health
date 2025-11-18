@@ -1,7 +1,13 @@
+package com.tbank.t_health.data.local
+
 import android.content.Context
 import com.tbank.t_health.data.model.UserData
+import javax.inject.Inject
+import javax.inject.Singleton
+import dagger.hilt.android.qualifiers.ApplicationContext
 
-class UserPrefs(context: Context) {
+@Singleton
+class UserPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
     fun saveUser(userData: UserData) {

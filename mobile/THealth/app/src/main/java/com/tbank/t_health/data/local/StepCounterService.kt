@@ -1,29 +1,40 @@
-package com.tbank.composefoodtracker.services
+package com.tbank.t_health.data.local
 
 import android.content.Context
 import android.util.Log
-
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.Duration
-import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-
-import androidx.health.connect.client.units.Length
-import androidx.health.connect.client.units.Mass
-
-
 class StepCounterService(private val context: Context) {
+
+
+    fun observeSteps(pollingIntervalMs: Long = 5000L): Flow<Int> = flow {
+        while (true) {
+            val steps = try {
+                getStepsForToday()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                0
+            }
+            emit(steps) // текущее значение
+            delay(pollingIntervalMs) // ждем
+        }
+    }
 
     suspend fun getDistanceForToday(): Double {
         val startOfDay = ZonedDateTime.now().toLocalDate()
@@ -39,12 +50,12 @@ class StepCounterService(private val context: Context) {
     }
 
     private suspend fun getDistanceForRange(startTime: Instant, endTime: Instant): Double {
-        val client = HealthConnectClient.getOrCreate(context)
+        val client = HealthConnectClient.Companion.getOrCreate(context)
         return try {
             val response = client.readRecords(
                 ReadRecordsRequest(
                     recordType = DistanceRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startTime, endTime)
                 )
             )
             // сумма всех расстояний в метрах
@@ -56,12 +67,12 @@ class StepCounterService(private val context: Context) {
     }
 
     private suspend fun readSteps(startTime: Instant, endTime: Instant): Int {
-        val client = HealthConnectClient.getOrCreate(context)
+        val client = HealthConnectClient.Companion.getOrCreate(context)
         return try {
             val response = client.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = StepsRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startTime, endTime)
                 )
             )
             response.records.sumOf { it.count.toInt() }
@@ -105,12 +116,12 @@ class StepCounterService(private val context: Context) {
     }
 
     private suspend fun getTotalCaloriesForDate(startTime: Instant, endTime: Instant): Double {
-        val healthConnectClient = HealthConnectClient.getOrCreate(context)
+        val healthConnectClient = HealthConnectClient.Companion.getOrCreate(context)
         return try {
             val response = healthConnectClient.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = TotalCaloriesBurnedRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startTime, endTime)
                 )
             )
             response.records.sumOf { it.energy.inKilocalories }
@@ -121,7 +132,7 @@ class StepCounterService(private val context: Context) {
     }
 
     suspend fun getCaloriesFromStepsAndActiveCalories(): Double {
-        val client = HealthConnectClient.getOrCreate(context)
+        val client = HealthConnectClient.Companion.getOrCreate(context)
 
         val startOfDay = ZonedDateTime.now().toLocalDate()
             .atStartOfDay(ZoneId.systemDefault()).toInstant()
@@ -129,9 +140,9 @@ class StepCounterService(private val context: Context) {
 
         return try {
             val stepsRecords = client.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = StepsRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfNow)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startOfDay, endOfNow)
                 )
             ).records
 
@@ -141,9 +152,9 @@ class StepCounterService(private val context: Context) {
             val caloriesFromSteps = minutesFromSteps * 4.5 // 4.5 ккал/мин — примерное среднее
 
             val activeCaloriesRecords = client.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = ActiveCaloriesBurnedRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startOfDay, endOfNow)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startOfDay, endOfNow)
                 )
             ).records
 
@@ -184,22 +195,22 @@ class StepCounterService(private val context: Context) {
     }
 
     private suspend fun getActiveMinutesForRange(startTime: Instant, endTime: Instant): Long {
-        val client = HealthConnectClient.getOrCreate(context)
+        val client = HealthConnectClient.Companion.getOrCreate(context)
 
 
         return try {
             val stepsResponse = client.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = StepsRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startTime, endTime)
                 )
             )
             val allSteps = stepsResponse.records
 
             val sessionsResponse = client.readRecords(
-                ReadRecordsRequest(
+                androidx.health.connect.client.request.ReadRecordsRequest(
                     recordType = ExerciseSessionRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    timeRangeFilter = TimeRangeFilter.Companion.between(startTime, endTime)
                 )
             )
             val sessions = sessionsResponse.records

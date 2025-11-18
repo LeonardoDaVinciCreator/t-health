@@ -1,5 +1,4 @@
-
-package com.tbank.t_health.network
+package com.tbank.t_health.data.remote
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

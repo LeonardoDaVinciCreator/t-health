@@ -1,4 +1,4 @@
-package com.tbank.t_health.network
+package com.tbank.t_health.data.remote
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

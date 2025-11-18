@@ -1,7 +1,7 @@
 package com.tbank.t_health.data.repository
 
 import com.tbank.t_health.data.model.UserData
-import com.tbank.t_health.network.RetrofitInstance
+import com.tbank.t_health.data.remote.RetrofitInstance
 
 class AuthRepository {
     private val api = RetrofitInstance.api

@@ -1,6 +1,6 @@
 package com.tbank.t_health
 
-import UserPrefs
+import com.tbank.t_health.data.local.UserPrefs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,7 +25,11 @@ import com.tbank.t_health.ui.components.Footer
 import com.tbank.t_health.ui.components.Header
 import com.tbank.t_health.ui.screens.PostsScreen
 import com.tbank.t_health.ui.theme.THealthTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+import com.tbank.t_health.ui.health.HealthScreen
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var userPrefs: UserPrefs
 

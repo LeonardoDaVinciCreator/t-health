@@ -1,7 +1,17 @@
-package com.tbank.t_health.network
+package com.tbank.t_health.data.remote
 
-import com.tbank.t_health.data.model.*
-import retrofit2.http.*
+import com.tbank.t_health.data.model.AchievementData
+import com.tbank.t_health.data.model.ActivityData
+import com.tbank.t_health.data.model.ActivityGetData
+import com.tbank.t_health.data.model.UserData
+import com.tbank.t_health.data.model.WorkoutData
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface HealthApiService {
 

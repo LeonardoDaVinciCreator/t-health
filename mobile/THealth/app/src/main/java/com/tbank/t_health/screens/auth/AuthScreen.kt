@@ -1,6 +1,6 @@
 package com.tbank.t_health.screens.auth
 
-import UserPrefs
+import com.tbank.t_health.data.local.UserPrefs
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

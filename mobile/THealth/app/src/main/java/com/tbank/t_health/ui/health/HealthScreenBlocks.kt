@@ -1,8 +1,6 @@
-package com.tbank.t_health.screens
+package com.tbank.t_health.ui.health
 
-import com.tbank.t_health.data.local.UserPrefs
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,14 +22,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -53,6 +48,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -65,226 +61,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
-import androidx.health.connect.client.records.DistanceRecord
-import androidx.health.connect.client.records.ExerciseSessionRecord
-import androidx.health.connect.client.records.SpeedRecord
-import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.navigation.NavController
 import com.tbank.composefoodtracker.services.ExerciseService
-import com.tbank.t_health.data.local.StepCounterService
 import com.tbank.t_health.R
-import com.tbank.t_health.data.local.ActiveStorage
-import com.tbank.t_health.data.repository.ActivityRepository
-import com.tbank.t_health.ui.theme.StatsTypography
-import kotlinx.coroutines.launch
+import com.tbank.t_health.constants.NavigationDestinations
 import com.tbank.t_health.data.HealthDataMonth
+import com.tbank.t_health.data.local.UserPrefs
+import com.tbank.t_health.data.model.ActivityFullData
+import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.data.toWeeklyGroups
 import com.tbank.t_health.ui.theme.RobotoFontFamily
-import androidx.compose.ui.graphics.graphicsLayer
-import com.tbank.t_health.constants.NavigationDestinations
-import com.tbank.t_health.data.model.ActivityFullData
-import com.tbank.t_health.data.model.ActivityGetData
-import com.tbank.t_health.data.repository.WorkoutRepository
-import kotlinx.coroutines.delay
+import com.tbank.t_health.ui.theme.StatsTypography
 import java.time.LocalDate
-
-
-// Разрешения
-val PERMISSIONS = setOf(
-    // Чтение
-    HealthPermission.getReadPermission(StepsRecord::class),
-    HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
-    HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-    HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-    HealthPermission.getReadPermission(SpeedRecord::class),
-    HealthPermission.getReadPermission(DistanceRecord::class),
-
-
-            // Запись
-    HealthPermission.getWritePermission(ActiveCaloriesBurnedRecord::class),
-    HealthPermission.getWritePermission(TotalCaloriesBurnedRecord::class),
-    HealthPermission.getWritePermission(ExerciseSessionRecord::class),
-    HealthPermission.getWritePermission(DistanceRecord::class)
-
-
-
-)
+import kotlin.collections.chunked
+import kotlin.collections.forEach
+import kotlin.collections.forEachIndexed
+import kotlin.collections.maxOfOrNull
 
 @Composable
-fun HealthScreen(navController: NavController) {
-    val context = LocalContext.current
-    val stepService = StepCounterService(context)
-    val activityRepo = ActivityRepository(context)
-    val activeStorage = ActiveStorage(context)
-
-    val coroutineScope = rememberCoroutineScope()
-    val healthConnectClient = remember { HealthConnectClient.getOrCreate(context) }
-
-    var stepsGoal by remember { mutableStateOf(10000f) }
-    var activeMinutesGoal by remember { mutableStateOf(240f) } // 4 часа = 240 минут
-    var caloriesGoal by remember { mutableStateOf(1200f) }
-
-    var yesterdaySteps by remember { mutableStateOf(0) }
-    var showMessage by remember { mutableStateOf(true) }
-
-    var steps by remember { mutableStateOf(0) }
-    var activeMinutes by remember { mutableStateOf(0) }
-    var activeCalories by remember { mutableStateOf(0.0) }
-    var calories by remember { mutableStateOf(0.0) }
-    var loading by remember { mutableStateOf(true) }
-    var permissionRequested by remember { mutableStateOf(false) }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        PermissionController.createRequestPermissionResultContract()
-    ) { granted ->
-        if (granted.containsAll(PERMISSIONS)) {
-            coroutineScope.launch {
-                steps = StepCounterService(context).getStepsForToday()
-                //activeMinutes = StepCounterService(context).getMinutesForToday()
-                calories = StepCounterService(context).getCaloriesForToday()
-                loading = false
-            }
-        } else {
-            println("Разрешения Health Connect не получены")
-        }
-    }
-
-    // Проверка разрешений после Compose
-    LaunchedEffect(Unit) {
-        val granted = healthConnectClient.permissionController.getGrantedPermissions()
-        if (!granted.containsAll(PERMISSIONS) && !permissionRequested) {
-            permissionRequested = true
-            permissionLauncher.launch(PERMISSIONS)
-        } else if (granted.containsAll(PERMISSIONS)) {
-            // текущие данные шагов и активности
-            steps = stepService.getStepsForToday()
-            activeMinutes = stepService.getActiveMinutesForToday().toInt() + (activeStorage.getActiveSeconds() / 60)
-            activeCalories = activeStorage.getCalories()
-            calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeCalories
-            yesterdaySteps = stepService.getStepsForDate(LocalDate.now().minusDays(1))
-            showMessage = steps > yesterdaySteps
-
-            // Получаем пользователя
-            val userPrefs = UserPrefs(context)
-            val user = userPrefs.getUser()
-
-            if (user != null && user.id != null) {
-                coroutineScope.launch {
-                    try {
-                        // сбор и сохранение локально
-                        activityRepo.collectAndSaveDailyData(stepService, activeStorage, user.id!!)
-
-                        // отправка на сервер
-                        activityRepo.syncToServer(user.id!!, clearAfterSync = true)
-                        delay(300)
-
-                        val serverActivities = activityRepo.getUserActivitiesFromServer(user.id!!)
-                        Log.d("HealthScreen", "User from server: ${user.username}, phone=${user.phone}")
-                        Log.d("HealthScreen", "Server activities count=${serverActivities.size}")
-                        for (a in serverActivities) {
-                            Log.d("HealthScreen", "Activity: type=${a.type}, value=${a.value}, calories=${a.calories}, data=${a.date}")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("HealthScreen", "Sync error: ${e.message}")
-                    }
-                }
-            } else {
-                Log.e("HealthScreen", "⚠️ User not found — skipping sync")
-            }
-        }
-    }
-
-    Log.d("StepCounter", "Активных минут сегодня: $activeMinutes")
-
-    var showStepsDialog by remember { mutableStateOf(false) }
-    var showCaloriesDialog by remember { mutableStateOf(false) }
-
-    Scaffold(containerColor = Color(0xFFE0E2E3)) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(padding)
-                .padding(horizontal = 0.dp, vertical = 10.dp)
-                .padding(bottom = 60.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            ProfileHeaderBlock()
-            Spacer(modifier = Modifier.height(12.dp))
-            ActivityStatsBlock(
-                steps = steps,
-                stepsGoal = stepsGoal,
-                activeMinutes = activeMinutes,
-                activeMinutesGoal = activeMinutesGoal,
-                calories = calories,
-                caloriesGoal = caloriesGoal,
-                onStepsGoalClick = { showStepsDialog = true },
-                onActiveMinutesGoalClick = { /* TODO */ },
-                onCaloriesGoalClick = { showCaloriesDialog = true }
-            )
-
-
-
-            Spacer(modifier = Modifier.height(8.dp))
-            if (showMessage) {
-                StepDifferenceMessageBlock(
-                    todaySteps = steps,
-                    yesterdaySteps = yesterdaySteps,
-                    onClose = { showMessage = false }
-                )
-            }
-
-
-
-            if (showStepsDialog) {
-                StatGoalDialog(
-                    label = "Цель по шагам",
-                    currentGoal = stepsGoal.toDouble(),
-                    onDismiss = { showStepsDialog = false },
-                    onConfirm = { newGoal ->
-                        stepsGoal = newGoal.toFloat()
-                        showStepsDialog = false
-                    }
-                )
-            }
-
-            if (showCaloriesDialog) {
-                StatGoalDialog(
-                    label = "Цель по калориям",
-                    currentGoal = caloriesGoal.toDouble(),
-                    onDismiss = { showCaloriesDialog = false },
-                    onConfirm = { newGoal ->
-                        caloriesGoal = newGoal.toFloat()
-                        showCaloriesDialog = false
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-//            StepsChart()
-
-            StepsChart2(stepsGoal, activeMinutesGoal, caloriesGoal)
-
-            Spacer(modifier = Modifier.height(14.dp))
-            //MenuSection()
-
-            MenuSection(navController, activeCalories)
-
-
-
-
-        }
-    }
-}
-
-@Composable
-fun ProfileHeaderBlock() {
+fun ProfileHeaderBlock(userName: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -307,7 +102,7 @@ fun ProfileHeaderBlock() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Сергей Третьяков",
+                text = userName,
                 style = TextStyle(
                     fontFamily = RobotoFontFamily,
                     fontWeight = FontWeight.Normal,
@@ -334,7 +129,7 @@ fun ProfileHeaderBlock() {
 fun ActivityStatsBlock(
     steps: Int,
     stepsGoal: Float,
-    activeMinutes: Int,
+    activeMinutes: Long,
     activeMinutesGoal: Float,
     calories: Double,
     caloriesGoal: Float,
@@ -589,191 +384,6 @@ fun StepDifferenceMessageBlock(
 
 enum class ChartType {
     STEPS, ACTIVEMINUTES, CALORIES
-}
-
-@Composable
-fun StepsChart() {
-    var currentWeek by remember { mutableStateOf(0) }
-    var currentChartType by remember { mutableStateOf(ChartType.STEPS) }
-
-    val allHealthData = HealthDataMonth()
-    val weeklyData = allHealthData.toWeeklyGroups()
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-
-    val (dataList, title, formatValue) = when (currentChartType) {
-        ChartType.STEPS -> Triple(
-            weeklyData.map { week -> week.map { it.steps } },
-            "Шаги",
-            { value: Number -> value.toString() }
-        )
-        ChartType.ACTIVEMINUTES -> Triple(
-            weeklyData.map { week -> week.map { it.activeMinutes } },
-            "Ходьба",
-            { value: Number -> "${value} мин" }
-        )
-        ChartType.CALORIES -> Triple(
-            weeklyData.map{ week -> week.map { it.calories }},
-            "Калории",
-            { value: Number -> "${value} ккал" }
-        )
-    }
-
-    val weekDates = weeklyData.map { week ->
-        week.map { it.date.dayOfMonth.toString().padStart(2, '0') + "." + it.date.monthValue.toString().padStart(2, '0') }
-    }
-
-    val allWeeks = dataList
-
-    val threshold = 100f // порог свайпа
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFFFFFFF), RoundedCornerShape(16.dp))
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragEnd = {
-                        if (dragOffset > threshold) {
-                            // Свайп вправо → назад по кругу
-                            currentChartType = when (currentChartType) {
-                                ChartType.STEPS -> ChartType.CALORIES
-                                ChartType.CALORIES -> ChartType.ACTIVEMINUTES
-                                ChartType.ACTIVEMINUTES -> ChartType.STEPS
-                            }
-                        } else if (dragOffset < -threshold) {
-                            // Свайп влево → вперёд по кругу
-                            currentChartType = when (currentChartType) {
-                                ChartType.STEPS -> ChartType.CALORIES
-                                ChartType.CALORIES -> ChartType.ACTIVEMINUTES
-                                ChartType.ACTIVEMINUTES -> ChartType.STEPS
-                            }
-                        }
-                        dragOffset = 0f
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        dragOffset += dragAmount.x
-                    }
-                )
-            }
-    ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFE5E5E5), RoundedCornerShape(16.dp))
-    ) {
-
-        val steps = allWeeks[currentWeek]
-        val maxSteps = steps.maxOfOrNull { it.toFloat() } ?: 1f
-
-        Text(
-            text = title,
-            style = StatsTypography.bodyLarge,
-            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
-        )
-        Spacer(modifier = Modifier.height(5.dp))
-
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 22.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    steps.forEachIndexed { _, value ->
-                        val barHeight = (120 * (value.toFloat() / maxSteps)).dp
-
-                        Box(
-                            modifier = Modifier
-                                .width(40.dp)
-                                .height(barHeight),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(25.dp)
-                                    .height(barHeight)
-                                    .background(Color(0xFFAAAAAA))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(40.dp)
-                                    .height(barHeight)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFCDCDCD))
-                                        .border(3.87.dp, Color(0xFFAAAAAA), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = formatValue(value),
-                                        style = StatsTypography.bodySmall,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Divider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(0.5.dp),
-                    color = Color(0xFFAAAAAA)
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, start = 2.dp, end = 2.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(13.dp)
-                            .clip(CircleShape)
-                            .offset(x = 4.dp)
-                            .clickable { if (currentWeek > 0) currentWeek-- },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("<-", style = StatsTypography.labelMedium)
-                    }
-
-                    weekDates[currentWeek].forEach { date ->
-                        Text(
-                            text = date,
-                            style = StatsTypography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(40.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(13.dp)
-                            .clip(CircleShape)
-                            .offset(x = (-4).dp)
-                            .clickable { if (currentWeek < allWeeks.size - 1) currentWeek++ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("->", style = StatsTypography.labelMedium)
-                    }
-                }
-            }
-        }
-    }
-    }
 }
 
 @Composable
@@ -1098,7 +708,7 @@ fun MenuSection(navController: NavController, calories:Double) {
         MenuItem("Тренировка","-${calories.toInt()}", onClick = {
 //            navController.navigate("workout")
             navController.navigate(NavigationDestinations.WORKOUT)
-            },
+        },
             onClickAdd = {
                 //navController.navigate("addWorkout")
                 navController.navigate(NavigationDestinations.ADD_WORKOUT)
@@ -1108,9 +718,9 @@ fun MenuSection(navController: NavController, calories:Double) {
         //добавить переменную для калорий из еды
         MenuItem("Питание", onClick = {
             Log.d("Exercise", "Питание нажато")
-            },
+        },
             onClickAdd = {
-            Log.d("Exercise", "Добавить калории за еду")
+                Log.d("Exercise", "Добавить калории за еду")
             }
         )
     }
@@ -1226,7 +836,3 @@ fun StatGoalDialog(
         }
     )
 }
-
-
-
-

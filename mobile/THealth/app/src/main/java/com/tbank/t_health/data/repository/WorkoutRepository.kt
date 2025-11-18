@@ -11,7 +11,7 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import com.tbank.t_health.data.model.WorkoutData
-import com.tbank.t_health.network.RetrofitInstance
+import com.tbank.t_health.data.remote.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

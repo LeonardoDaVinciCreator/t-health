@@ -1,4 +1,4 @@
-package com.tbank.t_health.data
+package com.tbank.t_health.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -89,9 +89,7 @@ class ActiveStorage(context: Context) {
         Log.d("ActiveMinutesStorage", "Добавлено ${"%.1f".format(calories)} ккал, всего: ${"%.1f".format(newTotal)}")
     }
 
-    /**
-     * Обнулить минуты (в 23:59 или при смене дня)
-     */
+    //Обнулить минуты (в 23:59 или при смене дня)
     fun resetDaily() {
         prefs.edit()
             .putInt(KEY_MINUTES, 0)

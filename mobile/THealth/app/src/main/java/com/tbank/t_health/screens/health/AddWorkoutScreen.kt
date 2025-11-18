@@ -1,7 +1,7 @@
 package com.tbank.t_health.screens.health
 
 
-import UserPrefs
+import com.tbank.t_health.data.local.UserPrefs
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
