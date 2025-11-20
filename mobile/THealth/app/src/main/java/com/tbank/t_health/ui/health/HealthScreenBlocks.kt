@@ -129,7 +129,7 @@ fun ProfileHeaderBlock(userName: String) {
 fun ActivityStatsBlock(
     steps: Int,
     stepsGoal: Float,
-    activeMinutes: Long,
+    activeMinutesFormatted: String,
     activeMinutesGoal: Float,
     calories: Double,
     caloriesGoal: Float,
@@ -188,19 +188,13 @@ fun ActivityStatsBlock(
                 //circleSize = circleSizeClamped
             )
 
-            val hours = activeMinutes / 60
-            val minutes = activeMinutes % 60
-            val formattedTime = String.format("%d:%02d", hours, minutes)
-
-
             StatCircleNew(
-                valueTop = formattedTime,
+                valueTop = activeMinutesFormatted,
                 valueBottom = "часов активности",
                 icon = R.drawable.ic_activity,
-                progress = (activeMinutes / activeMinutesGoal).coerceIn(0f, 1f),
+                progress = if (stepsGoal <= 0f) 0f else (steps.toFloat() / stepsGoal).coerceIn(0f, 1f),
                 Color(0xFFAAAFBA),
-                onClick = onActiveMinutesGoalClick,
-                //circleSize = circleSizeClamped
+                onClick = onActiveMinutesGoalClick
             )
 
             StatCircleNew(
@@ -695,22 +689,14 @@ fun StepsChart2(
 
 @Composable
 fun MenuSection(navController: NavController, calories:Double) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val exerciseService = remember { ExerciseService(context) }
-
-    var workoutRunning by remember { mutableStateOf(false) }
-
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         MenuItem("Тренировка","-${calories.toInt()}", onClick = {
-//            navController.navigate("workout")
             navController.navigate(NavigationDestinations.WORKOUT)
         },
             onClickAdd = {
-                //navController.navigate("addWorkout")
                 navController.navigate(NavigationDestinations.ADD_WORKOUT)
             }
         )

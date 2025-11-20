@@ -62,6 +62,8 @@ fun HealthScreen(
     var activeMinutesGoal by remember { mutableStateOf(240f) }
     var caloriesGoal by remember { mutableStateOf(1200f) }
 
+    val activeMinutesFormatted = viewModel.formatActiveMinutes(todayStats.activeMinutes)
+
     var showStepsDialog by remember { mutableStateOf(false) }
     var showCaloriesDialog by remember { mutableStateOf(false) }
     var showMessage by remember { mutableStateOf(todayStats.steps > yesterdaySteps) }
@@ -114,7 +116,7 @@ fun HealthScreen(
             ActivityStatsBlock(
                 steps = todayStats.steps,
                 stepsGoal = stepsGoal,
-                activeMinutes = todayStats.activeMinutes,
+                activeMinutesFormatted = activeMinutesFormatted,
                 activeMinutesGoal = activeMinutesGoal,
                 calories = todayStats.calories,
                 caloriesGoal = caloriesGoal,

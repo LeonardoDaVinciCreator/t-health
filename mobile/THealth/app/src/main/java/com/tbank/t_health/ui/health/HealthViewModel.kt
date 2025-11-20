@@ -34,6 +34,25 @@ class HealthViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _stepsGoal = MutableStateFlow(8000f)
+    val stepsGoal: StateFlow<Float> = _stepsGoal
+
+    private val _activeMinutesGoal = MutableStateFlow(120f) // 2 часа
+    val activeMinutesGoal: StateFlow<Float> = _activeMinutesGoal
+
+    private val _caloriesGoal = MutableStateFlow(500f)
+    val caloriesGoal: StateFlow<Float> = _caloriesGoal
+
+
+    val activeMinutesProgress: StateFlow<Float> = combine(
+        todayStats,
+        _activeMinutesGoal
+    ) { stats, goal ->
+        if (goal <= 0f) 0f
+        else (stats.activeMinutes.toFloat() / goal).coerceIn(0f, 1f)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0f)
+
+
     init {
         loadUser()
         observeTodaySteps()
@@ -66,12 +85,6 @@ class HealthViewModel @Inject constructor(
         }
     }
 
-    private fun loadToday() {
-        viewModelScope.launch {
-            _todayStats.value = getTodayStats()
-        }
-    }
-
     private fun loadYesterday() {
         viewModelScope.launch {
             _yesterdaySteps.value = getYesterdayStats()
@@ -94,7 +107,7 @@ class HealthViewModel @Inject constructor(
                 syncActivities(userId)
                 Log.d("HealthViewModel", "Синхронизация завершена")
 
-                // После синхронизации обновляем данные
+                // После синхронизации обновляем данные, нужно исправить тк это должно быть в ui
                 delay(1000) // Даем время на сохранение данных
                 loadTodayData()
             } catch (e: Exception) {
@@ -103,5 +116,11 @@ class HealthViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun formatActiveMinutes(minutes: Long): String {
+        val hours = minutes / 60
+        val mins = minutes % 60
+        return String.format("%d:%02d", hours, mins)
     }
 }
