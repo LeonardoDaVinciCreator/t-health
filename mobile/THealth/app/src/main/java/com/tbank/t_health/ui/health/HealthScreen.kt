@@ -49,7 +49,11 @@ fun HealthScreen(
 
     val todayStats by viewModel.todayStats.collectAsState()
     val yesterdaySteps by viewModel.yesterdaySteps.collectAsState()
+    val monthlyStats by viewModel.monthlyStats.collectAsState()
+
     val user by viewModel.user.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.loadMonth() }
 
     LaunchedEffect(todayStats) {
         Log.d("HealthScreen", "Обновление todayStats: steps=${todayStats.steps}, activeMinutes=${todayStats.activeMinutes}, calories=${todayStats.calories}")
@@ -58,9 +62,9 @@ fun HealthScreen(
         Log.d("HealthScreen", "Пользователь: $user")
     }
 
-    var stepsGoal by remember { mutableStateOf(10000f) }
-    var activeMinutesGoal by remember { mutableStateOf(240f) }
-    var caloriesGoal by remember { mutableStateOf(1200f) }
+    val stepsGoal by viewModel.stepsGoal.collectAsState()
+    val activeMinutesGoal by viewModel.activeMinutesGoal.collectAsState()
+    val caloriesGoal by viewModel.caloriesGoal.collectAsState()
 
     val activeMinutesFormatted = viewModel.formatActiveMinutes(todayStats.activeMinutes)
 
@@ -116,6 +120,7 @@ fun HealthScreen(
             ActivityStatsBlock(
                 steps = todayStats.steps,
                 stepsGoal = stepsGoal,
+                activeMinutes = todayStats.activeMinutes,
                 activeMinutesFormatted = activeMinutesFormatted,
                 activeMinutesGoal = activeMinutesGoal,
                 calories = todayStats.calories,
@@ -140,7 +145,7 @@ fun HealthScreen(
                     currentGoal = stepsGoal.toDouble(),
                     onDismiss = { showStepsDialog = false },
                     onConfirm = { newGoal ->
-                        stepsGoal = newGoal.toFloat()
+                        viewModel.setStepsGoal(newGoal.toFloat())
                         showStepsDialog = false
                     }
                 )
@@ -152,7 +157,7 @@ fun HealthScreen(
                     currentGoal = caloriesGoal.toDouble(),
                     onDismiss = { showCaloriesDialog = false },
                     onConfirm = { newGoal ->
-                        caloriesGoal = newGoal.toFloat()
+                        viewModel.setCaloriesGoal(newGoal.toFloat())
                         showCaloriesDialog = false
                     }
                 )
@@ -162,7 +167,8 @@ fun HealthScreen(
             StepsChart2(
                 stepsGoal = stepsGoal,
                 activeMinutesGoal = activeMinutesGoal,
-                caloriesGoal = caloriesGoal
+                caloriesGoal = caloriesGoal,
+                monthlyData = monthlyStats
             )
 
             Spacer(modifier = Modifier.height(14.dp))

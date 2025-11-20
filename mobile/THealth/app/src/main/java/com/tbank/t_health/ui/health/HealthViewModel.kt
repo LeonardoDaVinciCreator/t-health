@@ -3,7 +3,10 @@ package com.tbank.t_health.ui.health
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tbank.t_health.data.local.UserPrefs
+import com.tbank.t_health.data.model.ActivityFullData
 import com.tbank.t_health.data.model.UserData
+import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.domain.model.DailyStats
 import com.tbank.t_health.domain.usecase.*
 import com.tbank.t_health.domain.usecase.GetUserUseCase
@@ -11,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,7 +23,10 @@ class HealthViewModel @Inject constructor(
     private val getYesterdayStats: GetYesterdayStatsUseCase,
     private val observeSteps: ObserveStepsUseCase,
     private val syncActivities: SyncActivitiesUseCase,
-    private val getUserUseCase: GetUserUseCase
+    private val getUserUseCase: GetUserUseCase,
+
+    private val repo: ActivityRepository,
+    private val prefs: UserPrefs
 ) : ViewModel() {
 
     private val _todayStats = MutableStateFlow(DailyStats.empty())
@@ -27,6 +34,9 @@ class HealthViewModel @Inject constructor(
 
     private val _yesterdaySteps = MutableStateFlow(0)
     val yesterdaySteps: StateFlow<Int> = _yesterdaySteps.asStateFlow()
+
+    private val _monthlyStats = MutableStateFlow<List<ActivityFullData>>(emptyList())
+    val monthlyStats = _monthlyStats.asStateFlow()
 
     private val _user = MutableStateFlow<UserData?>(null)
     val user: StateFlow<UserData?> = _user.asStateFlow()
@@ -60,6 +70,10 @@ class HealthViewModel @Inject constructor(
         loadTodayData()
 
     }
+
+    fun setStepsGoal(newGoal: Float) { _stepsGoal.value = newGoal }
+    fun setCaloriesGoal(newGoal: Float) { _caloriesGoal.value = newGoal }
+    fun setActiveMinutesGoal(newGoal: Float) { _activeMinutesGoal.value = newGoal }
 
     private fun loadUser() {
         viewModelScope.launch {
@@ -95,6 +109,18 @@ class HealthViewModel @Inject constructor(
     fun loadTodayData() {
         viewModelScope.launch {
             _todayStats.value = getTodayStats()
+        }
+    }
+
+    fun loadMonth() {
+        viewModelScope.launch {
+            val user = prefs.getUser()
+            if (user?.id != null) {
+                _monthlyStats.value = repo.getUserActivitiesFor28Days(
+                    user.id,
+                    LocalDate.now()
+                )
+            }
         }
     }
 

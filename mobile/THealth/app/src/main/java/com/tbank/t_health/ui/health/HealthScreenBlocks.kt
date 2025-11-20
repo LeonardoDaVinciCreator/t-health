@@ -129,6 +129,7 @@ fun ProfileHeaderBlock(userName: String) {
 fun ActivityStatsBlock(
     steps: Int,
     stepsGoal: Float,
+    activeMinutes: Long,
     activeMinutesFormatted: String,
     activeMinutesGoal: Float,
     calories: Double,
@@ -191,7 +192,7 @@ fun ActivityStatsBlock(
                 valueTop = activeMinutesFormatted,
                 valueBottom = "часов активности",
                 icon = R.drawable.ic_activity,
-                progress = if (stepsGoal <= 0f) 0f else (steps.toFloat() / stepsGoal).coerceIn(0f, 1f),
+                progress = (activeMinutes.toFloat() / activeMinutesGoal).coerceIn(0f, 1f),
                 Color(0xFFAAAFBA),
                 onClick = onActiveMinutesGoalClick
             )
@@ -383,42 +384,17 @@ enum class ChartType {
 fun StepsChart2(
     stepsGoal: Float,
     activeMinutesGoal: Float,
-    caloriesGoal: Float
+    caloriesGoal: Float,
+    monthlyData: List<ActivityFullData>,
 ) {
     var currentWeek by remember { mutableStateOf(0) }
     var currentChartType by remember { mutableStateOf(ChartType.STEPS) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
 
-    val context = LocalContext.current
-    val activityRepo = remember { ActivityRepository(context) }
-    val userPrefs = remember { UserPrefs(context) }
-
-    var monthlyServerData by remember { mutableStateOf<List<ActivityFullData>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        val user = userPrefs.getUser()
-        if (user?.id != null) {
-            try {
-                val monthActivities: List<ActivityFullData> = activityRepo.getUserActivitiesFor28Days(user.id, LocalDate.now())
-                monthlyServerData = monthActivities
-                Log.d("ACTIVITY_MONTH", "monthActivities=$monthActivities")
-
-                monthActivities.forEach { a ->
-                    Log.d(
-                        "ACTIVITY_MONTH",
-                        "steps=${a.steps}, activeMinutes=${a.activeMinutes}, calories=${a.calories}, date=${a.date}"
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("StepsChart2", "Error fetching monthly activities: ${e.message}")
-            }
-        }
-    }
-
     // разбика данных 28 дней на недели
-    val weeklyData = remember(monthlyServerData) {
-        if (monthlyServerData.size == 28) {
-            monthlyServerData.chunked(7)
+    val weeklyData = remember(monthlyData) {
+        if (monthlyData.size == 28) {
+            monthlyData.chunked(7)
         } else {
             // проверка в getUserActivitiesFor28Days, но не дает все равно без проверки
             List(4) { weekIndex ->
