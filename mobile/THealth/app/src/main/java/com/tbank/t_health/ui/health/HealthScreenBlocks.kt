@@ -184,8 +184,7 @@ fun ActivityStatsBlock(
                 icon = R.drawable.ic_steps,
                 progress = (steps / stepsGoal).coerceIn(0f, 1f),
                 Color(0xFFFDD502),
-                onClick = onStepsGoalClick,
-                //circleSize = circleSizeClamped
+                onClick = onStepsGoalClick
             )
 
             StatCircleNew(
