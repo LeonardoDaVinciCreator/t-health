@@ -14,7 +14,9 @@ public interface TrainingRepo extends CrudRepository<Training, Long> {
     //TODO: rewrite without using interval function
     @Query(
             """
-select * from trainings as t where t.user_id = :userId and (t.date >= now() - interval ':interval');
+select * from training t
+    where t.user_id = :userId
+      and t.date >= now() - cast(:interval as interval);
 """
     )
     List<Training> getStats(Long userId, String interval);

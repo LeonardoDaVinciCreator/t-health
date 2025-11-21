@@ -2,6 +2,7 @@ package com.olegf.thealthback.web.controller;
 
 import com.olegf.thealthback.domain.entity.Training;
 import com.olegf.thealthback.domain.service.TrainingService;
+import com.olegf.thealthback.utils.Interval;
 import com.olegf.thealthback.web.dto.TrainingApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -39,10 +40,10 @@ public class TrainingController {
         trainingService.delete(id);
     }
 
-    @GetMapping("/user/{userId}/stats")
+    @PostMapping("/user/{userId}/stats")
     public List<Training> getUserTrainingStats(
             @PathVariable Long userId,
-            @RequestBody TrainingApi.Interval interval
+            @RequestBody Interval interval
     ) {
         return trainingService.getStats(userId, interval);
     }
