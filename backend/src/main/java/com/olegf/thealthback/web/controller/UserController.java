@@ -6,8 +6,6 @@ import com.olegf.thealthback.domain.service.UserService;
 import com.olegf.thealthback.web.dto.ActivityCreateDto;
 import com.olegf.thealthback.web.dto.UserCreateDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 

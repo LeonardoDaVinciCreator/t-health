@@ -2,17 +2,18 @@ package com.olegf.thealthback.utils;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class Interval {
     private long value;
     private Unit unit;
 
-    public String valueString() {
+    public LocalDateTime dateFrom() {
         return switch (this.unit) {
-
-            case WEEK -> this.value + " week";
-            case DAY -> this.value + " days";// 24 * 60 * 60 * 1000 (ms)
-            case MONTH -> this.value + " month";
+            case WEEK -> LocalDateTime.now().minusWeeks(this.value);
+            case DAY -> LocalDateTime.now().minusDays(this.value);
+            case MONTH -> LocalDateTime.now().minusMonths(this.value);
         };
     }
 

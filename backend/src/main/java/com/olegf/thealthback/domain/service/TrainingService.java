@@ -47,6 +47,7 @@ public class TrainingService {
 
     @Transactional(readOnly = true)
     public List<Training> getStats(Long userId, Interval interval) {
-        return trainingRepo.getStats(userId, interval.valueString());
+        var dateFrom = interval.dateFrom();
+        return trainingRepo.getStats(userId, dateFrom);
     }
 }

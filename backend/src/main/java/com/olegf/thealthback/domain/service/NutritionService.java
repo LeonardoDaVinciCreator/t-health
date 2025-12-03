@@ -46,6 +46,7 @@ public class NutritionService {
 
     @Transactional(readOnly = true)
     public List<Nutrition> getStats(Long userId, Interval interval) {
-        return nutritionRepo.getStats(userId, interval.valueString());
+        var dateFrom = interval.dateFrom();
+        return nutritionRepo.getStats(userId, dateFrom);
     }
 }

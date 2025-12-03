@@ -1,8 +1,6 @@
 package com.olegf.thealthback.domain.repository;
 
 import com.olegf.thealthback.domain.entity.Activity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;

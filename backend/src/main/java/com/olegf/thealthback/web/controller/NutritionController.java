@@ -30,7 +30,7 @@ public class NutritionController {
         return nutritionService.getNutritionById(id);
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public Nutrition updateNutrition(@PathVariable Long id, @RequestBody NutrtitionApi.UpdateDto updateDto) {
         return nutritionService.update(id, updateDto);
     }

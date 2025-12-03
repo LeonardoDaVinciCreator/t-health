@@ -1,6 +1,5 @@
 package com.olegf.thealthback.domain.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.olegf.thealthback.web.dto.NutrtitionApi;
 import lombok.AllArgsConstructor;
@@ -11,7 +10,6 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Data
@@ -30,8 +28,6 @@ public class Nutrition {
     private Parameters parameters;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime date;
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     public Nutrition(Long userId, String mealName, MealType mealType, LocalDateTime date, Parameters parameters, int mealCalories) {
         this.userId = userId;
