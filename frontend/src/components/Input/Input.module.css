@@ -1,0 +1,41 @@
+.inputBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input {
+  border: 1px solid #e1e3e4;
+  padding: 12px 10px;
+  border-radius: 20px;
+  background-color: transparent;
+  color: black;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.05);
+  flex: 1 1 auto;
+}
+
+.label {
+  font-size: 14px;
+  color: black;
+}
+
+.inputElement {
+  display: flex;
+  gap: 2px;
+}
+
+.nodes {
+  color: #98a2b3;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.blur {
+  text-shadow: 0 0 5px #000;
+  color: transparent;
+  transition: 0.5s;
+}
+
+.blur input[text] {
+  user-select: none;
+}

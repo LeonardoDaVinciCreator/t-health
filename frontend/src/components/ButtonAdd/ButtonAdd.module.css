@@ -1,0 +1,26 @@
+.btn {
+  border-radius: 8px;
+  padding: 16px 12px;
+  color: black;
+  font-size: 14px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  width: 100%;
+}
+
+.textSecondary {
+  font-size: 12px;
+  color: #98a2b3;
+
+  padding-right: 8px;
+  border-right: 1px solid #98a2b3;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}

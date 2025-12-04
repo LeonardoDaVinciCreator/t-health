@@ -1,0 +1,27 @@
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 13.5px 19px;
+}
+
+.headerTitle {
+  font-weight: regular;
+  font-size: 18px;
+  color: black;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn {
+  padding: 11px;
+  background-color: #ffd700;
+  border-radius: 8px;
+  color: black;
+  border: none;
+  /*TODO: Посмотреть шрифт */
+}

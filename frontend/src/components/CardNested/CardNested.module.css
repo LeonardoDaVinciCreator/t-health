@@ -1,0 +1,15 @@
+.card {
+  border: 1px solid #e6e6e6;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0 0 12px 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

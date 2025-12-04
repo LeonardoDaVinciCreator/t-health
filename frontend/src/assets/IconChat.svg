@@ -1,0 +1,10 @@
+<svg viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20.000000" height="18.000000" fill="none" customFrame="#000000">
+	<defs>
+		<linearGradient id="paint_linear_4" x1="4.62397575" x2="13.0239744" y1="-3.35999823" y2="20.4960041" gradientUnits="userSpaceOnUse">
+			<stop stop-color="rgb(213,215,217)" offset="0.113924049" stop-opacity="1" />
+			<stop stop-color="rgb(152,162,179)" offset="0.991561174" stop-opacity="1" />
+		</linearGradient>
+	</defs>
+	<rect id="Icon" width="20.000000" height="18.000000" x="0.000000" y="0.000000" />
+	<path id="Chat Icon" d="M18.3916 1.68C18.3916 0.756 17.644 0 16.72 0L3.27998 0C2.35598 0 1.59998 0.756 1.59998 1.68L1.59998 11.76C1.59998 12.684 2.35598 13.44 3.27998 13.44L15.04 13.44L18.4 16.8L18.3916 1.68Z" fill="url(#paint_linear_4)" fill-rule="evenodd" />
+</svg>

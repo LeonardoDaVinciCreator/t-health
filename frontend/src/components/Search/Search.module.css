@@ -1,0 +1,31 @@
+.search {
+  display: flex;
+  align-items: center;
+
+  padding: 13px 14px 13px 0px;
+  gap: 8px;
+}
+
+.input {
+  flex: 1 1 auto;
+  color: #abb0bb;
+  font-size: 12px;
+  background: transparent;
+  width: 100%;
+  border: none;
+}
+
+.input:focus {
+  outline: none;
+  border: none;
+  border-bottom: 1px solid #98a2b3;
+}
+
+.input::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.input::placeholder {
+  color: #abb0bb;
+}

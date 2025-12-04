@@ -1,0 +1,26 @@
+.input {
+  background-color: transparent;
+  border: 1px solid #e1e3e4;
+  border-radius: 20px;
+  padding: 12px 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  color: black;
+  text-align: center;
+  width: 120px;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.inputBlock {
+  display: flex;
+  gap: 2px;
+}

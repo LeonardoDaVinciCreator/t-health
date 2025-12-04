@@ -1,0 +1,10 @@
+<svg viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20.000000" height="18.000000" fill="none" customFrame="#000000">
+	<defs>
+		<linearGradient id="paint_linear_1" x1="4.66655827" x2="11.9014149" y1="-3.08082891" y2="19.1505928" gradientUnits="userSpaceOnUse">
+			<stop stop-color="rgb(213,215,217)" offset="0.113924049" stop-opacity="1" />
+			<stop stop-color="rgb(152,162,179)" offset="0.991561174" stop-opacity="1" />
+		</linearGradient>
+	</defs>
+	<rect id="Icon" width="20.000000" height="18.000000" x="0.000000" y="0.000000" />
+	<path id="Like Icon" d="M10.0007 1.27415C11.9582 -0.48335 14.9832 -0.425017 16.869 1.46415C18.754 3.35415 18.819 6.36415 17.0657 8.32748L9.999 15.4042L2.93401 8.32748C1.18068 6.36415 1.24651 3.34915 3.13068 1.46415C5.01818 -0.422517 8.03734 -0.48585 10.0007 1.27415L10.0007 1.27415Z" fill="url(#paint_linear_1)" fill-rule="evenodd" />
+</svg>

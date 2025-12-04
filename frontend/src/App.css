@@ -1,0 +1,37 @@
+#root {
+  width: 100%;
+  margin: 0 auto;
+
+  font-family: "Roboto", sans-serif;
+}
+/* 
+  max-width: 1440px; 
+  padding: 0px 12px;
+  */
+.btnIcon {
+  background-color: transparent;
+  border: none;
+
+  cursor: pointer;
+}
+
+.btnIconL {
+  width: 48px;
+  height: 48px;
+}
+
+.flex {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.flex-col {
+  display: flex;
+  display: subgrid;
+  flex-direction: column;
+  gap: 8px;
+}
+.flex-1-1 {
+  flex: 1 1;
+}

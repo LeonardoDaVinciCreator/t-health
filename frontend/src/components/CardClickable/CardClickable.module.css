@@ -1,0 +1,16 @@
+.card {
+  cursor: pointer;
+  border: 1px solid #e6e6e6;
+}
+
+.header {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0;
+}
