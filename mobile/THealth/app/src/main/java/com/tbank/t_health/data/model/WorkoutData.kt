@@ -1,20 +1,3 @@
-//package com.tbank.t_health.data.model
-//
-//import java.time.LocalDate
-//
-//data class WorkoutData(
-//    val id: String,
-//    val name: String,
-//    val type: String,
-//    val calories: Double,
-//    val durationSeconds: Int,
-//    val date: String,
-//
-//    val plannedDate: String,
-//
-//    val isCompleted: Boolean
-//)
-
 package com.tbank.t_health.data.model
 
 import java.time.LocalDate

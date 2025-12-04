@@ -47,6 +47,7 @@ class ActivityRepository(private val context: Context) {
 
     // Отправка локальных данных на сервер (Retrofit)
     suspend fun syncToServer(userId: Long, clearAfterSync: Boolean = false) = withContext(Dispatchers.IO) {
+        Log.d("ActivityRepository", "syncToServer() CALLED")
         try {
             val activities = loadLocalActivities()
             if (activities.isEmpty()) {

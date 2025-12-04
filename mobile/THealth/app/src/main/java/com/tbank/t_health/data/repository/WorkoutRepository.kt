@@ -10,6 +10,7 @@ import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
+import com.tbank.t_health.data.model.TrainingCreateData
 import com.tbank.t_health.data.model.WorkoutData
 import com.tbank.t_health.data.remote.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
@@ -79,8 +80,23 @@ class WorkoutRepository(private val context: Context) {
     suspend fun syncToServer() = withContext(Dispatchers.IO) {
         try {
             val workouts = loadLocalWorkouts()
+
+            if (workouts.isEmpty()) {
+                Log.d("WorkoutRepository", "No workouts to sync")
+                return@withContext
+            }
+
             for (workout in workouts) {
-                RetrofitInstance.api.postWorkout(workout)
+                //RetrofitInstance.api.postWorkout(workout)
+                val dto = TrainingCreateData(
+                    userId = workout.userId,
+                    title = workout.name,
+                    type = workout.type,
+                    duration = workout.durationSeconds.toLong(),
+                    calories = workout.calories.toInt(),
+                    date = workout.plannedDate.atStartOfDay().toString()// исправить под LocalDateTime!
+                )
+                RetrofitInstance.api.createTraining(dto)
                 Log.d(
                     "WorkoutRepository",
                     "Synced workout ${workout.id} (${workout.name}) to server"
@@ -89,6 +105,7 @@ class WorkoutRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.e("WorkoutRepository", "Sync error: ${e.message}")
         }
+        clearLocalData()
     }
 
     suspend fun markWorkoutCompleted(id: Long) = withContext(Dispatchers.IO) {

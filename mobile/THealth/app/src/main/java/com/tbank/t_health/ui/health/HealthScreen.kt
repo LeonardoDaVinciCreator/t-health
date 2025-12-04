@@ -82,6 +82,7 @@ fun HealthScreen(
                 viewModel.loadTodayData()
                 user?.id?.let { userId ->
                     viewModel.sync(userId)
+                    Log.d("ActivityRepository", "syncToServer() CALLED")
                 } ?: run {
                     Log.e("HealthScreen", "userId is null, синхронизация невозможна")
                 }
@@ -99,6 +100,11 @@ fun HealthScreen(
             permissionLauncher.launch(PERMISSIONS)
         } else if (granted.containsAll(PERMISSIONS)) {
             viewModel.loadTodayData()
+
+            user?.id?.let { userId ->
+                viewModel.sync(userId)
+                Log.d("HealthScreen", "sync() called because permissions already granted")
+            }
         }
     }
 

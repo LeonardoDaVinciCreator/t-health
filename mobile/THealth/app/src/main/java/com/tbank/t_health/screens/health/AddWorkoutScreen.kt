@@ -1,6 +1,7 @@
 package com.tbank.t_health.screens.health
 
 
+import android.util.Log
 import com.tbank.t_health.data.local.UserPrefs
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -34,9 +35,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.tbank.t_health.R
+import com.tbank.t_health.data.model.TrainingCreateData
 import com.tbank.t_health.data.repository.WorkoutRepository
 import com.tbank.t_health.data.model.WorkoutData
 import com.tbank.t_health.data.model.WorkoutType
+import com.tbank.t_health.data.remote.RetrofitInstance
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.launch
@@ -44,7 +47,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,11 +145,16 @@ fun AddWorkoutScreen(navController: NavController) {
                     }
 
                     coroutineScope.launch {
-                        val user = userPrefs.getUser() // ✅ получаем пользователя
+                        val user = userPrefs.getUser()
                         if (user == null || user.id == null) {
                             Toast.makeText(context, "Ошибка: пользователь не найден", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
+
+                        val localDate = LocalDate.now()
+                        val isoDate = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+
+                        val dateTime = localDate.atStartOfDay()
 
                         val workout = WorkoutData(
                             userId = user.id,
@@ -158,6 +165,25 @@ fun AddWorkoutScreen(navController: NavController) {
                             plannedDate = localDate,
                             isCompleted = false
                         )
+
+                        try{
+                            val request = TrainingCreateData(
+                                userId = user.id,
+                                title = name,
+                                type = type,
+                                duration = totalSeconds.toLong(),
+                                calories = calories.toIntOrNull() ?: 0,
+                                date = isoDate
+                            )
+                            Log.d("AddWorkoutScreen", "request: $request")
+                            RetrofitInstance.api.createTraining(request)
+                            Toast.makeText(context, "Тренировка сохранена", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        }catch (e: Exception) {
+                            Log.e("TRAINING_API", "Ошибка: ${e.message}", e)
+                            Toast.makeText(context, "Ошибка отправки на сервер", Toast.LENGTH_SHORT).show()
+                        }
+
 
                         workoutRepo.saveWorkoutLocally(workout)
                         navController.previousBackStackEntry?.savedStateHandle?.set("workoutSaved", true)
