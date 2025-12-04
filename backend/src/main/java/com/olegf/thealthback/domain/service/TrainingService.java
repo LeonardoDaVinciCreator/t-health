@@ -3,6 +3,7 @@ package com.olegf.thealthback.domain.service;
 import com.olegf.thealthback.domain.EntityNotFoundException;
 import com.olegf.thealthback.domain.entity.Training;
 import com.olegf.thealthback.domain.repository.TrainingRepo;
+import com.olegf.thealthback.utils.Interval;
 import com.olegf.thealthback.web.dto.TrainingApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class TrainingService {
     @Transactional(readOnly = true)
     public Training getTrainingById(Long id) {
         return trainingRepo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Training not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Training not found with id: " + id));
     }
 
     public Training update(Long id, TrainingApi.UpdateDto updateDto) {
@@ -45,14 +46,8 @@ public class TrainingService {
     }
 
     @Transactional(readOnly = true)
-    public List<Training> searchByCriteria(Long userId, TrainingApi.SearchCriteria criteria) {
-        var trainings = trainingRepo.findAllByUserId(userId);
-
-        return trainings;
-    }
-
-    @Transactional(readOnly = true)
-    public List<Training> getStats(Long userId, TrainingApi.Interval interval) {
-        return trainingRepo.getStats(userId, interval.valueString());
+    public List<Training> getStats(Long userId, Interval interval) {
+        var dateFrom = interval.dateFrom();
+        return trainingRepo.getStats(userId, dateFrom);
     }
 }
