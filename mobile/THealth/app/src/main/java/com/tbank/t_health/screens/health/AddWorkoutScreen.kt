@@ -35,14 +35,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.tbank.t_health.R
+import com.tbank.t_health.data.model.ActivityData
+import com.tbank.t_health.data.model.ActivityType
 import com.tbank.t_health.data.model.TrainingCreateData
 import com.tbank.t_health.data.repository.WorkoutRepository
 import com.tbank.t_health.data.model.WorkoutData
 import com.tbank.t_health.data.model.WorkoutType
 import com.tbank.t_health.data.remote.RetrofitInstance
+import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -53,7 +57,6 @@ import java.time.format.DateTimeFormatter
 fun AddWorkoutScreen(navController: NavController) {
     val context = LocalContext.current
     val userPrefs = remember { UserPrefs(context) }
-    val workoutRepo = remember { WorkoutRepository(context) }
     val coroutineScope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
@@ -61,6 +64,8 @@ fun AddWorkoutScreen(navController: NavController) {
     var durationMinutes by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
+
+    var parsedDurationSeconds by remember { mutableStateOf(0L) }
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
@@ -111,6 +116,9 @@ fun AddWorkoutScreen(navController: NavController) {
                     .fillMaxWidth()
                     .height(40.dp),
                 onClick = {
+
+                    var totalSeconds: Long = 0L
+
                     if (name.isBlank() || type.isBlank() || durationMinutes.isBlank() || calories.isBlank() || date.isBlank()) {
                         Toast.makeText(context, "Заполните все поля", Toast.LENGTH_SHORT).show()
                         return@ExtendedFloatingActionButton
@@ -124,7 +132,7 @@ fun AddWorkoutScreen(navController: NavController) {
                     }
 
 
-                    val totalSeconds = try {
+                    try {
                         val parts = durationMinutes.split(":").map { it.toIntOrNull() ?: 0 }
                         val seconds = when (parts.size) {
                             3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
@@ -138,11 +146,12 @@ fun AddWorkoutScreen(navController: NavController) {
                             Toast.makeText(context, "Продолжительность должна быть не менее 1 секунды", Toast.LENGTH_SHORT).show()
                             return@ExtendedFloatingActionButton
                         }
-                        seconds
+                        totalSeconds = seconds.toLong()
                     } catch (_: Exception) {
                         Toast.makeText(context, "Ошибка в формате продолжительности", Toast.LENGTH_SHORT).show()
                         return@ExtendedFloatingActionButton
                     }
+
 
                     coroutineScope.launch {
                         val user = userPrefs.getUser()
@@ -151,43 +160,45 @@ fun AddWorkoutScreen(navController: NavController) {
                             return@launch
                         }
 
-                        val localDate = LocalDate.now()
                         val isoDate = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
 
-                        val dateTime = localDate.atStartOfDay()
 
-                        val workout = WorkoutData(
+
+                        Log.d("DurationDebug", "duration='$totalSeconds'")
+                        val request = TrainingCreateData(
                             userId = user.id,
-                            name = name,
+                            title = name,
                             type = type,
-                            calories = calories.toDoubleOrNull() ?: 0.0,
-                            durationSeconds = totalSeconds,
-                            plannedDate = localDate,
-                            isCompleted = false
+                            duration = totalSeconds,
+                            calories = calories.toIntOrNull() ?: 0,
+                            date = isoDate
                         )
 
+                        Log.d("AddWorkoutScreen", "Sending training request with duration = ${request.duration}")
+
+
                         try{
-                            val request = TrainingCreateData(
-                                userId = user.id,
-                                title = name,
-                                type = type,
-                                duration = totalSeconds.toLong(),
-                                calories = calories.toIntOrNull() ?: 0,
-                                date = isoDate
-                            )
                             Log.d("AddWorkoutScreen", "request: $request")
                             RetrofitInstance.api.createTraining(request)
                             Toast.makeText(context, "Тренировка сохранена", Toast.LENGTH_SHORT).show()
+
+                            val activityRepo = ActivityRepository(context)
+                            activityRepo.saveActivityLocally(
+                                ActivityData(
+                                    userId = user.id,
+                                    value = BigDecimal(request.duration.toDouble()),
+                                    type = ActivityType.TRAINING,
+                                    calories = calories.toIntOrNull()?.toDouble() ?: 0.0
+                                )
+                            )
+
+                            navController.previousBackStackEntry?.savedStateHandle?.set("workoutSaved", true)
                             navController.popBackStack()
+
                         }catch (e: Exception) {
                             Log.e("TRAINING_API", "Ошибка: ${e.message}", e)
                             Toast.makeText(context, "Ошибка отправки на сервер", Toast.LENGTH_SHORT).show()
                         }
-
-
-                        workoutRepo.saveWorkoutLocally(workout)
-                        navController.previousBackStackEntry?.savedStateHandle?.set("workoutSaved", true)
-                        navController.popBackStack()
                     }
                 },
                 containerColor = Color(0xFFFDD500),
@@ -656,8 +667,10 @@ fun NumberPickerColumn(
                         }
                     }
                 },
-                update = {
-                    it.value = value
+                update = { numberPicker ->
+                    if (numberPicker.value != value) {
+                        numberPicker.value = value
+                    }
                 }
             )
         }

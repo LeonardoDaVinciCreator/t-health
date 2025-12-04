@@ -1,8 +1,6 @@
 package com.tbank.t_health.screens
 
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -32,30 +29,32 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.tbank.t_health.R
 import com.tbank.t_health.data.repository.ActivityRepository
-import com.tbank.t_health.data.repository.WorkoutRepository
-import com.tbank.t_health.data.model.ActivityData
 import com.tbank.t_health.data.model.WorkoutData
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ColorFilter.Companion.tint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
-import com.tbank.t_health.data.model.ActivityType
+import com.tbank.t_health.data.local.UserPrefs
+import com.tbank.t_health.data.model.TrainingGetData
 import com.tbank.t_health.data.model.WorkoutType
-import java.math.BigDecimal
-import java.time.LocalDateTime
+import com.tbank.t_health.data.remote.RetrofitInstance
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
+    var trainings by remember { mutableStateOf<List<TrainingGetData>>(emptyList()) }
+
+    val context = LocalContext.current
+    val userPrefs = remember { UserPrefs(context) }
 
     var showSuccessMessage by remember { mutableStateOf(false) }
 
@@ -80,19 +79,16 @@ fun WorkoutScreen(navController: NavController) {
 
     var selectedDateRange by remember { mutableStateOf<Pair<LocalDate?, LocalDate?>?>(initialWeekRange) }
 
-    var workoutRunning by remember { mutableStateOf(false) }
-    var activeWorkoutId by remember { mutableStateOf<Long?>(null) }
-    var remainingSeconds by remember { mutableStateOf(0) }
-    var workouts by remember { mutableStateOf<List<WorkoutData>>(emptyList()) }
-
-    val context = LocalContext.current
-    val workoutRepo = remember { WorkoutRepository(context) }
-    val activityRepo = remember { ActivityRepository(context) }
-    val exerciseService = remember { com.tbank.composefoodtracker.services.ExerciseService(context) }
-
-    // загрузка списка тренировок при открытии экрана
     LaunchedEffect(Unit) {
-        workouts = workoutRepo.loadLocalWorkouts()
+        try {
+            val user = userPrefs.getUser()
+            if (user?.id != null) {
+                trainings = RetrofitInstance.api.getUserTrainings(user.id)
+            }
+        } catch (e: Exception) {
+            Log.e("WorkoutScreen", "API error", e)
+            trainings = emptyList()
+        }
     }
 
     Scaffold(
@@ -137,220 +133,91 @@ fun WorkoutScreen(navController: NavController) {
                     .padding(padding)
             ) {
 
-                val filteredWorkouts = if (selectedDateRange?.first != null || selectedDateRange?.second != null) {
-                    val (start, end) = selectedDateRange!!
-                    workouts.filter { workout ->
-                        val date = workout.plannedDate ?: return@filter false
-                        (start == null || !date.isBefore(start)) &&
-                                (end == null || !date.isAfter(end))
-                    }
-                } else workouts
+                item {
+                    WeeklyWorkoutStats(
+                        trainings = trainings,
+                        selectedDateRange = selectedDateRange,
+                        onDateRangeSelected = { start, end -> selectedDateRange = Pair(start, end) }
+                    )
+                }
 
+                val filteredTrainings = trainings.filterByDateRange(selectedDateRange)
+                val groupedByDay = filteredTrainings
+                    .map { it.parseDate() to it }
+                    .sortedBy { it.first }
+                    .groupBy { it.first }
 
-                val groupedByDay = filteredWorkouts
-                    .mapNotNull { it.plannedDate?.let { date -> it to date } }
-                    .sortedBy { it.second }
-                    .groupBy { it.second }
-
-
-                if (workouts.isEmpty()) {
-                    item{
+                if (trainings.isEmpty()) {
+                    item {
                         Text(
                             "Нет тренировок. Добавьте первую!",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            style = TextStyle(
-                                fontFamily = RobotoFontFamily,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 16.sp
-                            ),
+                            style = TextStyle(fontFamily = RobotoFontFamily, fontSize = 16.sp),
                             color = Color.Gray
                         )
                     }
                 } else {
 
-                    // Аналитика за неделю
-                    item{
-                        WeeklyWorkoutStats(
-                            workouts = workouts,
-                            selectedDateRange = selectedDateRange,
-                            onDateRangeSelected = { start, end ->
-                                selectedDateRange = Pair(start, end)
+
+                    filteredTrainings
+                        .groupBy { it.parseDate() }
+                        .entries
+                        .sortedBy { it.key }
+                        .forEach { (date, dayTrainings) ->
+                            // Заголовок дня
+                            item {
+                                Text(
+                                    text = formatDayHeader(date),
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp),
+                                    style = TextStyle(
+                                        fontFamily = RobotoFontFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 16.sp,
+                                        color = Color(0xFF333333)
+                                    )
+                                )
                             }
-                        )
-                    }
 
-                    groupedByDay.forEach { (date, workoutsInDayPairs) ->
-                        val workoutsInDay = workoutsInDayPairs.map { it.first }
-
-                        val headerText = formatDayHeader(date)
-
-                        item {
-                            Text(
-                                text = headerText,
-                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp),
-                                style = TextStyle(
-                                    fontFamily = RobotoFontFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp
-                                ),
-                                color = Color(0xFF333333)
-                            )
-                        }
-
-                        items(workoutsInDay) { workout ->
-                            val isRunning = workoutRunning && activeWorkoutId == workout.id
-
-
-                            WorkoutCard(
-                                workout = workout,
-                                isRunning = isRunning,
-                                remainingSeconds = remainingSeconds,
-                                onClick = {
-                                    coroutineScope.launch {
-                                        val today = LocalDate.now()
-                                        val plannedDate = workout.plannedDate
-
-                                        // Проверка даты
-                                        if (today != plannedDate) {
-                                            Toast.makeText(
-                                                context,
-                                                "Только в запланированный день (${plannedDate})",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            return@launch
-                                        }
-
-                                        if (!workoutRunning) {
-                                            workoutRunning = true
-                                            activeWorkoutId = workout.id
-                                            remainingSeconds = workout.durationSeconds
-
-                                            exerciseService.startWorkout(
-                                                name = workout.name,
-                                                type = workout.type,
-                                                durationSeconds = workout.durationSeconds,
-                                                calories = workout.calories,
-                                                plannedDate = workout.plannedDate ?: LocalDate.now()
-                                            )
-
-
-                                            Log.d("WorkoutScreen", "Начата тренировка: ${workout.name}")
-
-                                            // Таймер
-                                            launch {
-                                                while (remainingSeconds > 0 && workoutRunning) {
-                                                    delay(1000)
-                                                    remainingSeconds--
-                                                }
-
-                                                val finished = exerciseService.finishWorkout()
-
-
-                                                finished?.let{
-                                                    activityRepo.saveActivityLocally(
-                                                        ActivityData(
-                                                            id = it.id,
-                                                            userId = workout.userId,
-                                                            value = BigDecimal(workout.durationSeconds.toDouble()),
-                                                            type = ActivityType.TRAINING,
-                                                            calories = it.calories,
-                                                            //date = LocalDateTime.now()
-                                                        )
-                                                    )
-                                                }
-
-
-
-
-                                                workoutRunning = false
-                                                activeWorkoutId = null
-                                                workout.id?.let { id ->
-                                                    workoutRepo.markWorkoutCompleted(id)
-                                                }
-                                                workouts = workoutRepo.loadLocalWorkouts()
-                                            }
-                                        } else if (activeWorkoutId == workout.id) {
-                                            workoutRunning = false
-                                            activeWorkoutId = null
-                                            val finished = exerciseService.finishWorkout()
-
-                                            finished?.let{
-                                                activityRepo.saveActivityLocally(
-                                                    ActivityData(
-                                                        id = it.id,
-                                                        userId = workout.userId,
-                                                        value = BigDecimal(workout.durationSeconds.toDouble()),
-                                                        type = ActivityType.TRAINING,
-                                                        calories = it.calories,
-                                                        //date = LocalDateTime.now()
-                                                    )
-                                                )
-                                            }
-
-                                            workout.id?.let { id ->
-                                                workoutRepo.markWorkoutCompleted(id)
-                                            }
-
-                                            workouts = workoutRepo.loadLocalWorkouts()
-                                        }
-                                    }
-                                }
-
-                            )
+                            items(
+                                count = dayTrainings.size,
+                                key = { index -> dayTrainings[index].hashCode() }
+                            ) { index ->
+                                TrainingCard(dayTrainings[index])
+                            }
                         }
                     }
                 }
-            }
 
             //сообщение о сохранении тренировки
             if (showSuccessMessage) {
                 SuccessMessage()
             }
-
         }
     }
 }
 
 @Composable
-fun WorkoutCard(
-    workout: WorkoutData,
-    isRunning: Boolean,
-    remainingSeconds: Int,
-    onClick: () -> Unit
+fun TrainingCard(
+    training: TrainingGetData
 ) {
-    // Цвет карточки: серый, если завершена
-    val backgroundColor = when {
-        isRunning -> Color(0xFFDCF8C6) // зелёный при активной тренировке
-        workout.isCompleted -> Color(0xFFE0E0E0) // сероватый, если завершена
-        else -> Color.White // обычный цвет
-    }
-
-    // Если завершена — клики отключены
-    val clickableModifier = if (!workout.isCompleted) {
-        Modifier.clickable { onClick() }
-    } else {
-        Modifier // без клика
-    }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .then(clickableModifier),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = workout.name,
+                text = training.title,
                 style = TextStyle(
                     fontFamily = RobotoFontFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.sp
                 ),
-                color = if (workout.isCompleted) Color.Gray else Color.Black
+                color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -360,19 +227,19 @@ fun WorkoutCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = workout.type,
+                    text = training.type,
                     style = TextStyle(
                         fontFamily = RobotoMonoFontFamily,
                         fontSize = 12.sp
                     ),
-                    color = if (workout.isCompleted) Color(0xFF9E9E9E) else Color(0xFF97A1B2)
+                    color = Color(0xFF97A1B2)
                 )
 
                 Row(
                     modifier = Modifier.width(150.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val totalSeconds = workout.durationSeconds
+                    val totalSeconds = training.duration
                     val minutes = totalSeconds / 60
                     val seconds = totalSeconds % 60
                     val formattedTime = String.format("%02d:%02d", minutes, seconds)
@@ -380,55 +247,15 @@ fun WorkoutCard(
                     Text(
                         formattedTime,
                         style = TextStyle(fontFamily = RobotoMonoFontFamily, fontSize = 12.sp),
-                        color = if (workout.isCompleted) Color(0xFF9E9E9E) else Color(0xFF97A1B2)
+                        color = Color(0xFF97A1B2)
                     )
 
                     Text(
-                        "${workout.calories.toInt()} ккал",
+                        "${training.calories.toInt()} ккал",
                         style = TextStyle(fontFamily = RobotoMonoFontFamily, fontSize = 12.sp),
-                        color = if (workout.isCompleted) Color(0xFF9E9E9E) else Color(0xFF97A1B2)
+                        color = Color(0xFF97A1B2)
                     )
                 }
-            }
-
-            // отображение "в процессе"
-            AnimatedVisibility(visible = isRunning) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(Color(0xFFDCF8C6))
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val minutes = remainingSeconds / 60
-                    val seconds = remainingSeconds % 60
-                    Text(
-                        text = String.format("%02d:%02d", minutes, seconds),
-                        style = TextStyle(fontFamily = RobotoFontFamily, fontSize = 12.sp),
-                        color = Color(0xFF000000)
-                    )
-                    Text(
-                        "Тренировка в процессе...",
-                        style = TextStyle(fontFamily = RobotoFontFamily, fontSize = 14.sp),
-                        color = Color(0xFF000000)
-                    )
-                }
-            }
-
-            // надпись "Завершена"
-            if (workout.isCompleted) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Завершена",
-                    style = TextStyle(
-                        fontFamily = RobotoFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp
-                    ),
-                    color = Color(0xFF616161)
-                )
             }
         }
     }
@@ -444,11 +271,21 @@ fun getWorkoutWord(count: Int): String {
 
 @Composable
 fun WeeklyWorkoutStats(
-    workouts: List<WorkoutData>,
+    trainings: List<TrainingGetData>,
     selectedDateRange: Pair<LocalDate?, LocalDate?>? = null,
     onDateRangeSelected: (LocalDate?, LocalDate?) -> Unit
 ) {
     var isSelected by remember { mutableStateOf(false) }
+
+    val trainingsInPeriod = trainings.filterByDateRange(selectedDateRange)
+
+    val totalWorkouts = trainingsInPeriod.size
+    val typeCounts = trainingsInPeriod.groupingBy { it.type }.eachCount()
+    val totalSeconds = trainingsInPeriod.sumOf { it.duration }
+
+    val totalMinutes = totalSeconds / 60
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
 
     val (rangeStart, rangeEnd) = selectedDateRange ?: run {
         val now = LocalDate.now()
@@ -456,21 +293,6 @@ fun WeeklyWorkoutStats(
         val end = start.plusDays(6)
         Pair(start, end)
     }
-
-    val workoutsInPeriod = workouts.filter {
-        val workoutDate = it.plannedDate ?: return@filter false
-        (rangeStart == null || !workoutDate.isBefore(rangeStart)) &&
-                (rangeEnd == null || !workoutDate.isAfter(rangeEnd)) &&
-                it.isCompleted
-    }
-
-
-    val totalWorkouts = workoutsInPeriod.size
-    val typeCounts = workoutsInPeriod.groupingBy { it.type }.eachCount()
-    val totalSeconds = workoutsInPeriod.sumOf { it.durationSeconds }
-    val totalMinutes = totalSeconds / 60
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
 
     val colorMap = mapOf(
         WorkoutType.CARDIO to Color(0xFFFFD54F),
@@ -842,6 +664,34 @@ fun formatDayHeader(date: LocalDate, today: LocalDate = LocalDate.now()): String
                 val formattedDate = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
                 "$dayName, $formattedDate"
             }
+        }
+    }
+}
+
+fun TrainingGetData.parseDate(): LocalDate =
+    LocalDate.parse(date.split('T')[0])
+
+fun List<TrainingGetData>.filterByDateRange(
+    range: Pair<LocalDate?, LocalDate?>?
+): List<TrainingGetData> {
+    if (range?.first == null && range?.second == null) return this
+
+    return filter { training ->
+        try {
+            //из формата "2025-12-04T00:00:00" к "2025-12-04"
+            val trainingDate = LocalDate.parse(
+                training.date.split("T")[0],
+                DateTimeFormatter.ISO_LOCAL_DATE
+            )
+
+            val startDate = range.first
+            val endDate = range.second
+
+            (startDate == null || !trainingDate.isBefore(startDate)) &&
+                    (endDate == null || !trainingDate.isAfter(endDate))
+
+        } catch (e: DateTimeParseException) {
+            false
         }
     }
 }
