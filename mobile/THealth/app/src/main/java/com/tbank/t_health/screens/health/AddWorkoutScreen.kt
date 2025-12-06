@@ -892,7 +892,7 @@ fun SingleSelectCalendar(
                                         }
                                     )
                                     .clickable(
-                                        enabled = inCurrentMonth && !date.isBefore(LocalDate.now()),
+                                        enabled = inCurrentMonth && !date.isAfter(LocalDate.now()),
                                         onClick = {
                                             selectedDate = date
                                             onDateSelected(date)
@@ -904,7 +904,7 @@ fun SingleSelectCalendar(
                                     text = date.dayOfMonth.toString(),
                                     color = when {
                                         !inCurrentMonth -> Color.LightGray
-                                        date.isBefore(LocalDate.now()) -> Color.LightGray
+                                        date.isAfter(LocalDate.now()) -> Color.LightGray
                                         else -> Color.Black
                                     },
                                     style = TextStyle(
