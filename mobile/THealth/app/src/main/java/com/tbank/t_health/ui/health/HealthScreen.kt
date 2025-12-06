@@ -74,6 +74,8 @@ fun HealthScreen(
 
     var permissionRequested by remember { mutableStateOf(false) }
 
+    val trainingCalories by viewModel.trainingCalories.collectAsState()
+
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract()
     ) { granted ->
@@ -178,7 +180,7 @@ fun HealthScreen(
             )
 
             Spacer(modifier = Modifier.height(14.dp))
-            MenuSection(navController = navController, calories = todayStats.calories)
+            MenuSection(navController = navController, calories = trainingCalories)
         }
     }
 }

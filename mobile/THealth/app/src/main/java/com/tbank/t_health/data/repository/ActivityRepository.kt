@@ -98,8 +98,9 @@ class ActivityRepository(private val context: Context) {
             val now = LocalDateTime.now()
 
             val steps = stepService.getStepsForToday()
-            val activeMinutes = stepService.getActiveMinutesForToday().toInt() +
-                    (activeStorage.getActiveSeconds() / 60)
+            val activeSeconds =
+                stepService.getActiveMinutesForToday() * 60 +
+                        activeStorage.getActiveSeconds()
 
             val activeCalories = activeStorage.getCalories()
             val calories = stepService.getCaloriesFromStepsAndActiveCalories() + activeCalories
@@ -116,9 +117,9 @@ class ActivityRepository(private val context: Context) {
                 ActivityData(
                     id = null,
                     userId = userId,
-                    value = BigDecimal(activeMinutes.toDouble()),
-                    type = ActivityType.TRAINING,
-                    calories = calories,
+                    value = BigDecimal(activeSeconds),
+                    type = ActivityType.MOVING,
+                    calories = 0.0,
 
                 )
             )
@@ -127,7 +128,7 @@ class ActivityRepository(private val context: Context) {
                 saveActivityLocally(activity)
             }
 
-            Log.d("ActivityRepository", "✅ Saved daily data for user $userId — steps=$steps, activeMinutes=$activeMinutes, calories=$calories")
+            Log.d("ActivityRepository", "✅ Saved daily data for user $userId — steps=$steps, activeMinutes=${activeSeconds/60}, calories=$calories")
 
             activeStorage.resetDaily()
 
@@ -175,10 +176,14 @@ class ActivityRepository(private val context: Context) {
                     when (a.type) {
                         ActivityType.STEPS -> {
                             steps = a.value.toInt()
-                            calories = a.calories
+                            calories += a.calories
+                        }
+                        ActivityType.MOVING -> {
+                            activeMinutes += (a.value.toInt() / 60)
                         }
                         ActivityType.TRAINING -> {
-                            activeMinutes = a.value.toInt()
+                            activeMinutes += (a.value.toInt() / 60)
+                            calories += a.calories
                         }
                         else -> {} // MOVING и др игнор
                     }
@@ -201,6 +206,16 @@ class ActivityRepository(private val context: Context) {
             }
         }
     }
+
+    suspend fun getUserActivityForDate(
+        userId: Long,
+        date: LocalDate
+    ): ActivityFullData? {
+        // Переиспользуем уже существующую логику
+        return getUserActivitiesFor28Days(userId, date)
+            .firstOrNull { it.date == date }
+    }
+
 
     suspend fun getUserActivitiesFor28Days(
         userId: Long,
@@ -228,28 +243,40 @@ class ActivityRepository(private val context: Context) {
             }
             .groupBy({ it.first }, { it.second })
 
-        // генерация 28 дней
         return (0L..27L).map { offset ->
             val date = startDate.plusDays(offset)
             val activitiesForDay = activityByDate[date] ?: emptyList()
 
             if (activitiesForDay.isNotEmpty()) {
-                var steps = 0
-                var activeMinutes = 0
-                var calories = 0.0
+                // последнюю STEPS активность
+                val lastStepActivity = activitiesForDay
+                    .filter { it.type == ActivityType.STEPS }
+                    .maxByOrNull { it.date ?: "" }
 
-                activitiesForDay.forEach { a ->
-                    when (a.type) {
-                        ActivityType.STEPS -> {
-                            steps = a.value.toInt()
-                            calories = a.calories
-                        }
-                        ActivityType.TRAINING -> {
-                            activeMinutes = a.value.toInt()
-                        }
-                        else -> {} // MOVING и др игнор
+                // последнюю MOVING активность
+                val lastMovingActivity = activitiesForDay
+                    .filter { it.type == ActivityType.MOVING }
+                    .maxByOrNull { it.date ?: "" }
+
+                // Суммировать calories и activeMinutes для TRAINING
+                var totalTrainingCalories = 0.0
+                var totalTrainingActiveMinutes = 0
+
+                activitiesForDay
+                    .filter { it.type == ActivityType.TRAINING }
+                    .forEach { training ->
+                        totalTrainingActiveMinutes += (training.value.toInt() / 60)
+                        totalTrainingCalories += training.calories
                     }
-                }
+
+                // MOVING: секунды → минуты последняя запись
+                val movingMinutes =
+                    (lastMovingActivity?.value?.toInt() ?: 0) / 60
+
+                val activeMinutes = movingMinutes + totalTrainingActiveMinutes
+
+                val steps = lastStepActivity?.value?.toInt() ?: 0
+                val calories = (lastStepActivity?.calories ?: 0.0) + totalTrainingCalories
 
                 ActivityFullData(
                     steps = steps,
@@ -258,7 +285,6 @@ class ActivityRepository(private val context: Context) {
                     date = date
                 )
             } else {
-                // Если данных нет ставим нули
                 ActivityFullData(
                     steps = 0,
                     activeMinutes = 0,
@@ -267,6 +293,34 @@ class ActivityRepository(private val context: Context) {
                 )
             }
         }
+    }
+
+    suspend fun getTrainingCaloriesForDate(
+        userId: Long,
+        date: LocalDate
+    ): Double {
+        val allActivities = getUserActivitiesFromServer(userId)
+
+        return allActivities
+            .mapNotNull { activity ->
+                activity.date?.let { dateStr ->
+                    val parsedDate = try {
+                        LocalDate.parse(dateStr)
+                    } catch (e: DateTimeParseException) {
+                        try {
+                            LocalDateTime.parse(dateStr).toLocalDate()
+                        } catch (e2: Exception) {
+                            null
+                        }
+                    }
+                    if (parsedDate == date && activity.type == ActivityType.TRAINING) {
+                        activity.calories
+                    } else {
+                        null
+                    }
+                }
+            }
+            .sum()
     }
 
 }

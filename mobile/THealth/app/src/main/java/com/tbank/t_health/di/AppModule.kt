@@ -3,6 +3,7 @@ package com.tbank.t_health.di
 import android.content.Context
 import com.tbank.t_health.data.local.ActiveStorage
 import com.tbank.t_health.data.local.StepCounterService
+import com.tbank.t_health.data.local.UserPrefs
 import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.domain.usecase.*
 import dagger.Module
@@ -15,6 +16,15 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    fun provideGetTodayStatsFromRepoUseCase(
+        repo: ActivityRepository,
+        prefs: UserPrefs
+    ): GetTodayStatsFromRepoUseCase {
+        return GetTodayStatsFromRepoUseCase(repo, prefs)
+    }
+
 
     @Provides
     fun provideStepCounterService(@ApplicationContext context: Context) = StepCounterService(context)

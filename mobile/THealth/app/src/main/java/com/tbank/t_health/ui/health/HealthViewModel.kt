@@ -19,15 +19,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HealthViewModel @Inject constructor(
-    private val getTodayStats: GetTodayStatsUseCase,
+    //private val getTodayStats: GetTodayStatsUseCase,
+    private val getTodayStats: GetTodayStatsFromRepoUseCase,
     private val getYesterdayStats: GetYesterdayStatsUseCase,
-    private val observeSteps: ObserveStepsUseCase,
+    private val getTodayTrainingCaloriesUseCase: GetTodayTrainingCaloriesUseCase,
+    //private val observeSteps: ObserveStepsUseCase,
     private val syncActivities: SyncActivitiesUseCase,
     private val getUserUseCase: GetUserUseCase,
 
     private val repo: ActivityRepository,
     private val prefs: UserPrefs
 ) : ViewModel() {
+
+    private val _trainingCalories = MutableStateFlow(0.0)
+    val trainingCalories = _trainingCalories.asStateFlow()
 
     private val _todayStats = MutableStateFlow(DailyStats.empty())
     val todayStats: StateFlow<DailyStats> = _todayStats.asStateFlow()
@@ -65,15 +70,16 @@ class HealthViewModel @Inject constructor(
 
     init {
         loadUser()
-        observeTodaySteps()
+        //observeTodaySteps()
         loadYesterday()
         loadTodayData()
-
+        loadTrainingCalories()
     }
 
     fun setStepsGoal(newGoal: Float) { _stepsGoal.value = newGoal }
     fun setCaloriesGoal(newGoal: Float) { _caloriesGoal.value = newGoal }
     fun setActiveMinutesGoal(newGoal: Float) { _activeMinutesGoal.value = newGoal }
+
 
     private fun loadUser() {
         viewModelScope.launch {
@@ -91,13 +97,13 @@ class HealthViewModel @Inject constructor(
         }
     }
 
-    private fun observeTodaySteps() {
-        viewModelScope.launch {
-            observeSteps().collect { steps ->
-                _todayStats.update { it.copy(steps = steps) }
-            }
-        }
-    }
+//    private fun observeTodaySteps() {
+//        viewModelScope.launch {
+//            observeSteps().collect { steps ->
+//                _todayStats.update { it.copy(steps = steps) }
+//            }
+//        }
+//    }
 
     private fun loadYesterday() {
         viewModelScope.launch {
@@ -129,12 +135,14 @@ class HealthViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                syncActivities(userId)
                 Log.d("HealthViewModel", "Начало синхронизации для userId: $userId")
                 syncActivities(userId)
                 Log.d("HealthViewModel", "Синхронизация завершена")
 
                 // После синхронизации обновляем данные, нужно исправить тк это должно быть в ui
                 delay(1000) // Даем время на сохранение данных
+                loadTrainingCalories()
                 loadTodayData()
             } catch (e: Exception) {
                 Log.e("HealthViewModel", "Ошибка синхронизации", e)
@@ -148,5 +156,11 @@ class HealthViewModel @Inject constructor(
         val hours = minutes / 60
         val mins = minutes % 60
         return String.format("%d:%02d", hours, mins)
+    }
+
+    fun loadTrainingCalories() {
+        viewModelScope.launch {
+            _trainingCalories.value = getTodayTrainingCaloriesUseCase()
+        }
     }
 }
