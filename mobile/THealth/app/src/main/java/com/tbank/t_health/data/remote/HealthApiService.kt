@@ -3,6 +3,8 @@ package com.tbank.t_health.data.remote
 import com.tbank.t_health.data.model.AchievementData
 import com.tbank.t_health.data.model.ActivityData
 import com.tbank.t_health.data.model.ActivityGetData
+import com.tbank.t_health.data.model.NutritionCreateData
+import com.tbank.t_health.data.model.NutritionGetData
 import com.tbank.t_health.data.model.TrainingCreateData
 import com.tbank.t_health.data.model.TrainingGetData
 import com.tbank.t_health.data.model.TrainingUpdateData
@@ -69,30 +71,25 @@ interface HealthApiService {
         @Path("id") id: Long
     )
 
+    // ----------- Nutrition -----------
 
+    @POST("nutrition")
+    suspend fun createNutrition(
+        @Body data: NutritionCreateData
+    ): NutritionGetData
 
+    @GET("nutrition/user/{userId}")
+    suspend fun getUserNutritions(
+        @Path("userId") userId: Long
+    ): List<NutritionGetData>
 
+    @GET("nutrition/{id}")
+    suspend fun getNutritionById(
+        @Path("id") id: Long
+    ): NutritionGetData
 
-
-
-
-
-
-    @GET("achievements")
-    suspend fun getAllAchievements(): List<AchievementData>
-
-    @GET("achievements/{id}")
-    suspend fun getAchievementById(@Path("id") id: String): AchievementData
-
-    @POST("achievements")
-    suspend fun postAchievement(@Body achievement: AchievementData)
-
-    @PUT("achievements/{id}")
-    suspend fun updateAchievement(
-        @Path("id") id: String,
-        @Body achievement: AchievementData
+    @DELETE("nutrition/{id}")
+    suspend fun deleteNutrition(
+        @Path("id") id: Long
     )
-
-    @DELETE("achievements/{id}")
-    suspend fun deleteAchievement(@Path("id") id: String)
 }

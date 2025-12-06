@@ -37,6 +37,10 @@ import androidx.navigation.NavController
 import com.tbank.t_health.R
 import com.tbank.t_health.data.model.ActivityData
 import com.tbank.t_health.data.model.ActivityType
+import com.tbank.t_health.data.model.MealType
+import com.tbank.t_health.data.model.NutritionCreateData
+import com.tbank.t_health.data.model.NutritionGetData
+import com.tbank.t_health.data.model.NutritionParameters
 import com.tbank.t_health.data.model.TrainingCreateData
 import com.tbank.t_health.data.repository.WorkoutRepository
 import com.tbank.t_health.data.model.WorkoutData
@@ -173,6 +177,33 @@ fun AddWorkoutScreen(navController: NavController) {
                             calories = calories.toIntOrNull() ?: 0,
                             date = isoDate
                         )
+
+                        //проверка отправки данных еды
+                        val example = NutritionCreateData(
+                            userId = user.id,
+                            mealName = "Пример",
+                            mealCalories = 100,
+                            mealType = MealType.BREAKFAST,
+                            parameters = NutritionParameters(
+                                protein = 10.0,
+                                fats = 5.0,
+                                carbohydrate = 20.0
+                            ),
+                            date = isoDate
+                        )
+                        RetrofitInstance.api.createNutrition(example)
+
+                        val userNutritions: List<NutritionGetData> = RetrofitInstance.api.getUserNutritions(user.id)
+
+                        userNutritions.forEach { item ->
+                            Log.d(
+                                "NutritionList",
+                                "ID=${item.id}, name=${item.mealName}, calories=${item.mealCalories}, " +
+                                        "type=${item.mealType}, date=${item.date}, " +
+                                        "P=${item.parameters.protein}, F=${item.parameters.fats}, C=${item.parameters.carbohydrate}"
+                            )
+                        }
+
 
                         Log.d("AddWorkoutScreen", "Sending training request with duration = ${request.duration}")
 
