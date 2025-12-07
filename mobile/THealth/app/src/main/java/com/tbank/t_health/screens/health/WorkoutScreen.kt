@@ -141,12 +141,6 @@ fun WorkoutScreen(navController: NavController) {
                     )
                 }
 
-                val filteredTrainings = trainings.filterByDateRange(selectedDateRange)
-                val groupedByDay = filteredTrainings
-                    .map { it.parseDate() to it }
-                    .sortedBy { it.first }
-                    .groupBy { it.first }
-
                 if (trainings.isEmpty()) {
                     item {
                         Text(
@@ -160,12 +154,13 @@ fun WorkoutScreen(navController: NavController) {
                     }
                 } else {
 
+                    val filteredAndSortedTrainings = trainings
+                        .filterByDateRange(selectedDateRange)
+                        .map { it.parseDate() to it }
+                        .sortedByDescending { it.first }
+                        .groupBy { it.first }
 
-                    filteredTrainings
-                        .groupBy { it.parseDate() }
-                        .entries
-                        .sortedBy { it.key }
-                        .forEach { (date, dayTrainings) ->
+                    filteredAndSortedTrainings.entries.forEach { (date, dayTrainings) ->
                             // Заголовок дня
                             item {
                                 Text(
@@ -182,9 +177,9 @@ fun WorkoutScreen(navController: NavController) {
 
                             items(
                                 count = dayTrainings.size,
-                                key = { index -> dayTrainings[index].hashCode() }
+                                key = { index -> dayTrainings[index].second.hashCode() }
                             ) { index ->
-                                TrainingCard(dayTrainings[index])
+                                TrainingCard(dayTrainings[index].second)
                             }
                         }
                     }
