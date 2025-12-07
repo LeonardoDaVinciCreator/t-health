@@ -30,6 +30,7 @@ import com.tbank.t_health.ui.theme.THealthTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 import com.tbank.t_health.ui.health.HealthScreen
+import com.tbank.t_health.ui.notifications.NotificationsScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -70,7 +71,7 @@ class MainActivity : ComponentActivity() {
                                 hasUnreadNotifications = hasUnreadNotifications,
                                 onNotificationClick = {
                                     Log.d("Notifications123", "Нажата иконка уведомлений")
-                                    // TODO: позже — открыть экран
+                                    navController.navigate(NavigationDestinations.NOTIFICATIONS)
                                 }
                             )
                         }
@@ -119,6 +120,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(NavigationDestinations.ADD_WORKOUT) {
                             AddWorkoutScreen(navController)
+                        }
+                        composable(NavigationDestinations.NOTIFICATIONS) {
+                            NotificationsScreen()
                         }
 
                         composable(NavigationDestinations.AUTH) {

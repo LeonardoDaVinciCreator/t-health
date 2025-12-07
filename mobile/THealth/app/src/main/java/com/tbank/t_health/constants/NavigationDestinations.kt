@@ -11,6 +11,8 @@ object NavigationDestinations {
     const val WORKOUT = "workout"
     const val ADD_WORKOUT = "addWorkout"
     const val AUTH = "auth"
+
+    const val NOTIFICATIONS = "notifications"
 }
 
 object NavigationTabs {
