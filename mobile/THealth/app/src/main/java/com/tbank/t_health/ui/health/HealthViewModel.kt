@@ -1,16 +1,21 @@
 package com.tbank.t_health.ui.health
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tbank.t_health.data.local.NotificationHelper
 import com.tbank.t_health.data.local.UserPrefs
 import com.tbank.t_health.data.model.ActivityFullData
+import com.tbank.t_health.data.model.LocalNotification
+import com.tbank.t_health.data.model.NotificationType
 import com.tbank.t_health.data.model.UserData
 import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.domain.model.DailyStats
 import com.tbank.t_health.domain.usecase.*
 import com.tbank.t_health.domain.usecase.GetUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HealthViewModel @Inject constructor(
     //private val getTodayStats: GetTodayStatsUseCase,
+    @ApplicationContext private val context: Context,
     private val getTodayStats: GetTodayStatsFromRepoUseCase,
     private val getYesterdayStats: GetYesterdayStatsUseCase,
     private val getTodayTrainingCaloriesUseCase: GetTodayTrainingCaloriesUseCase,
@@ -115,7 +121,12 @@ class HealthViewModel @Inject constructor(
     fun loadTodayData() {
         viewModelScope.launch {
             _todayStats.value = getTodayStats()
+
+            val stats = _todayStats.value
+            checkGoals(stats.steps, stats.activeMinutes.toInt(), stats.calories)
         }
+        Log.d("Notifications-Test", "loadTodayData: ${_todayStats.value}")
+
     }
 
     fun loadMonth() {
@@ -163,4 +174,53 @@ class HealthViewModel @Inject constructor(
             _trainingCalories.value = getTodayTrainingCaloriesUseCase()
         }
     }
+
+    private fun checkGoals(steps: Int, activeMinutes: Int, calories: Double) {
+        val notifications = mutableListOf<LocalNotification>()
+
+        if (steps >= stepsGoal.value) {
+            notifications.add(
+                LocalNotification(
+                    id = System.currentTimeMillis(),
+                    type = NotificationType.STEPS,
+                    title = "Цель по шагам достигнута!",
+                    description = "Вы прошли $steps шагов. Цель — ${stepsGoal.value.toInt()}."
+                )
+            )
+        }
+
+        if (activeMinutes >= activeMinutesGoal.value) {
+            notifications.add(
+                LocalNotification(
+                    id = System.currentTimeMillis() + 1,
+                    type = NotificationType.ACTIVE_MINUTES,
+                    title = "Вы были активны дольше нормы!",
+                    description = "Активность: $activeMinutes минут. Цель — ${activeMinutesGoal.value.toInt()}."
+                )
+            )
+        }
+
+        if (calories >= caloriesGoal.value) {
+            notifications.add(
+                LocalNotification(
+                    id = System.currentTimeMillis() + 2,
+                    type = NotificationType.CALORIES,
+                    title = "Цель по калориям выполнена!",
+                    description = "Вы сожгли ${calories.toInt()} ккал. Цель — ${caloriesGoal.value.toInt()}."
+                )
+            )
+        }
+
+        if (notifications.isNotEmpty()) {
+            notifications.forEach { notif ->
+                prefs.addNotification(notif)
+
+                NotificationHelper.showLocalNotification(
+                    context,
+                    notif
+                )
+            }
+        }
+    }
+
 }

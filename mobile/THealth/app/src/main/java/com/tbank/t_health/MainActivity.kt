@@ -2,6 +2,7 @@ package com.tbank.t_health
 
 import com.tbank.t_health.data.local.UserPrefs
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,6 +19,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tbank.t_health.constants.NavigationDestinations
 import com.tbank.t_health.constants.NavigationTabs
+import com.tbank.t_health.data.local.NotificationHelper
 import com.tbank.t_health.screens.*
 import com.tbank.t_health.screens.auth.AuthScreen
 import com.tbank.t_health.screens.health.AddWorkoutScreen
@@ -36,6 +38,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         userPrefs = UserPrefs(this)
+
+        NotificationHelper.createNotificationChannel(this)
         enableEdgeToEdge()
 
         setContent {
@@ -46,7 +50,15 @@ class MainActivity : ComponentActivity() {
 
                 // определение видимости header и footer
                 val showHeaderAndFooter = currentDestination != NavigationDestinations.AUTH
+                val hasUnreadNotifications = userPrefs.hasUnreadNotifications()
+
                 val currentTab = NavigationTabs.AllTabs.find { it.id == currentDestination }
+
+                LaunchedEffect(Unit) {
+                    if (userPrefs.isUserLoggedIn()) {
+                        Log.d("Notifications123", "Пользователь залогинен. Есть непрочитанные уведомления: $hasUnreadNotifications")
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier
@@ -54,7 +66,13 @@ class MainActivity : ComponentActivity() {
                         .safeDrawingPadding(),
                     topBar = {
                         if (showHeaderAndFooter) {
-                            Header()
+                            Header(
+                                hasUnreadNotifications = hasUnreadNotifications,
+                                onNotificationClick = {
+                                    Log.d("Notifications123", "Нажата иконка уведомлений")
+                                    // TODO: позже — открыть экран
+                                }
+                            )
                         }
                     },
                     bottomBar = {
