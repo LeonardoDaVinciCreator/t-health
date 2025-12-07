@@ -4,8 +4,8 @@ data class TrainingGetData(
     val id: Long? = null,
     val userId: Long,
     val title: String,
+    val durationSecs: Long,
     val type: String,
-    val duration: Long,
     val calories: Int,
     val date: String
 )
@@ -14,7 +14,7 @@ data class TrainingCreateData(
     val userId: Long,
     val title: String,
     val type: String,
-    val duration: Long,
+    val durationSecs: Long,
     val calories: Int,
     val date: String
 )

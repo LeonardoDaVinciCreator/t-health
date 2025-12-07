@@ -173,7 +173,7 @@ fun AddWorkoutScreen(navController: NavController) {
                             userId = user.id,
                             title = name,
                             type = type,
-                            duration = totalSeconds,
+                            durationSecs = totalSeconds,
                             calories = calories.toIntOrNull() ?: 0,
                             date = isoDate
                         )
@@ -205,7 +205,7 @@ fun AddWorkoutScreen(navController: NavController) {
                         }
 
 
-                        Log.d("AddWorkoutScreen", "Sending training request with duration = ${request.duration}")
+                        Log.d("AddWorkoutScreen", "Sending training request with duration = ${request.durationSecs}")
 
 
                         try{
@@ -217,7 +217,7 @@ fun AddWorkoutScreen(navController: NavController) {
                             activityRepo.saveActivityLocally(
                                 ActivityData(
                                     userId = user.id,
-                                    value = BigDecimal(request.duration.toDouble()),
+                                    value = BigDecimal(request.durationSecs.toDouble()),
                                     type = ActivityType.TRAINING,
                                     calories = calories.toIntOrNull()?.toDouble() ?: 0.0
                                 )

@@ -234,7 +234,7 @@ fun TrainingCard(
                     modifier = Modifier.width(150.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val totalSeconds = training.duration
+                    val totalSeconds = training.durationSecs
                     val minutes = totalSeconds / 60
                     val seconds = totalSeconds % 60
                     val formattedTime = String.format("%02d:%02d", minutes, seconds)
@@ -276,7 +276,7 @@ fun WeeklyWorkoutStats(
 
     val totalWorkouts = trainingsInPeriod.size
     val typeCounts = trainingsInPeriod.groupingBy { it.type }.eachCount()
-    val totalSeconds = trainingsInPeriod.sumOf { it.duration }
+    val totalSeconds = trainingsInPeriod.sumOf { it.durationSecs }
 
     val totalMinutes = totalSeconds / 60
     val hours = totalMinutes / 60

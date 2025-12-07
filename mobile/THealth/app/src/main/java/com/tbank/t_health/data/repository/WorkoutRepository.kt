@@ -92,7 +92,7 @@ class WorkoutRepository(private val context: Context) {
                     userId = workout.userId,
                     title = workout.name,
                     type = workout.type,
-                    duration = workout.durationSeconds.toLong(),
+                    durationSecs = workout.durationSeconds.toLong(),
                     calories = workout.calories.toInt(),
                     date = workout.plannedDate.atStartOfDay().toString()// исправить под LocalDateTime!
                 )
