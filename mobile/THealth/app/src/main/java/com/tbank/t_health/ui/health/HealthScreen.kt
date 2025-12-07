@@ -29,11 +29,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.tbank.t_health.R
 import com.tbank.t_health.constants.HealthPermissions
+import com.tbank.t_health.constants.HealthPermissions.PERMISSIONS
 import com.tbank.t_health.constants.NavigationDestinations
 import com.tbank.t_health.data.local.*
 import com.tbank.t_health.data.model.ActivityFullData
 import com.tbank.t_health.data.repository.ActivityRepository
-import com.tbank.t_health.screens.PERMISSIONS
+
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import kotlinx.coroutines.launch
 import java.time.LocalDate
