@@ -42,8 +42,7 @@ import com.tbank.t_health.data.model.NutritionCreateData
 import com.tbank.t_health.data.model.NutritionGetData
 import com.tbank.t_health.data.model.NutritionParameters
 import com.tbank.t_health.data.model.TrainingCreateData
-import com.tbank.t_health.data.repository.WorkoutRepository
-import com.tbank.t_health.data.model.WorkoutData
+
 import com.tbank.t_health.data.model.WorkoutType
 import com.tbank.t_health.data.remote.RetrofitInstance
 import com.tbank.t_health.data.repository.ActivityRepository
