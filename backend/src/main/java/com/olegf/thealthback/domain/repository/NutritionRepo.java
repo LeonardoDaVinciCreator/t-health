@@ -12,10 +12,6 @@ import java.util.List;
 public interface NutritionRepo extends CrudRepository<Nutrition, Long> {
     List<Nutrition> findAllByUserId(Long userId);
 
-    @Query("""
-select * from nutrition
-where user_id = :userId
-and date >= :dateFrom
-""")
+    @Query("select * from nutrition where user_id = :userId and date >= :dateFrom")
     List<Nutrition> getStats(Long userId, LocalDateTime dateFrom);
 }

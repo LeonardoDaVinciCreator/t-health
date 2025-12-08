@@ -12,10 +12,6 @@ import java.util.List;
 public interface TrainingRepo extends CrudRepository<Training, Long> {
     List<Training> findAllByUserId(Long userId);
 
-    @Query("""
-select * from training t
-where t.user_id = :userId
-and t.date >= :dateFrom
-""")
+    @Query("select * from training t where t.user_id = :userId and t.date >= :dateFrom")
     List<Training> getStats(Long userId, LocalDateTime dateFrom);
 }

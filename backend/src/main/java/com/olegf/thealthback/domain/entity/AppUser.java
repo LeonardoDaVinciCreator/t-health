@@ -19,6 +19,10 @@ public class AppUser {
     private Long id;
     private String username;
     private byte[] phone;
+ 
+    private String position;
+    private String department;
+    private String avatarUrl;
 
     @MappedCollection(idColumn = "user_id")
     private Set<Activity> activities;
@@ -39,6 +43,9 @@ public class AppUser {
                 null,
                 createDto.getUsername(),
                 encodedPhone,
+                createDto.getPosition(),
+                createDto.getDepartment(),
+                createDto.getAvatarUrl(),
                 Collections.emptySet()
         );
     }

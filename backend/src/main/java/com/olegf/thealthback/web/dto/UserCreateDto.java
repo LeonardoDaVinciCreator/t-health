@@ -6,4 +6,7 @@ import lombok.Data;
 public class UserCreateDto {
     private String username;
     private String phone;
+    private String position;
+    private String department;
+    private String avatarUrl;
 }
