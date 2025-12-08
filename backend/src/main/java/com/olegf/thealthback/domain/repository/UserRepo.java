@@ -10,11 +10,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepo extends CrudRepository<AppUser, Long> {
 
-    @Query("""
-    select app_user from app_users app_user
-        where CAST(app_user.phone as text) = :phone
-    """)
+    @Query("select app_user from app_users app_user where CAST(app_user.phone as text) = :phone")
     Optional<AppUser> findByPhone(String phone);
-
-
 }
