@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tbank.t_health.data.local.NotificationHelper
+import com.tbank.t_health.data.local.NotificationStorage
 import com.tbank.t_health.data.local.UserPrefs
 import com.tbank.t_health.data.model.ActivityFullData
 import com.tbank.t_health.data.model.LocalNotification
@@ -34,7 +35,9 @@ class HealthViewModel @Inject constructor(
     private val getUserUseCase: GetUserUseCase,
 
     private val repo: ActivityRepository,
-    private val prefs: UserPrefs
+    private val prefs: UserPrefs,
+
+    private val notificationStorage: NotificationStorage
 ) : ViewModel() {
 
     private val _trainingCalories = MutableStateFlow(0.0)
@@ -213,7 +216,9 @@ class HealthViewModel @Inject constructor(
 
         if (notifications.isNotEmpty()) {
             notifications.forEach { notif ->
-                prefs.addNotification(notif)
+                //prefs.addNotification(notif)
+                notificationStorage.add(notif)
+
 
                 NotificationHelper.showLocalNotification(
                     context,
