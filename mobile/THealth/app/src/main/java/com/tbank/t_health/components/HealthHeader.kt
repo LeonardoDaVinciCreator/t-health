@@ -66,7 +66,7 @@ fun Header(
                     .padding(horizontal = 14.dp)
                     .clickable { onNotificationClick() },
                 colorFilter = if (hasUnreadNotifications) {
-                    androidx.compose.ui.graphics.ColorFilter.tint(Color.Red) // или любой акцентный цвет
+                    androidx.compose.ui.graphics.ColorFilter.tint(Color.Yellow)
                 } else {
                     null // оригинальный цвет иконки
                 }
@@ -74,9 +74,3 @@ fun Header(
         }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun HeaderPostPreview() {
-//    Header()
-//}

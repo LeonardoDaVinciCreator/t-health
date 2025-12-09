@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.tbank.t_health.components.HeaderViewModel
 import com.tbank.t_health.constants.NavigationDestinations
 import com.tbank.t_health.constants.NavigationTabs
 import com.tbank.t_health.data.local.NotificationHelper
@@ -51,7 +53,8 @@ class MainActivity : ComponentActivity() {
 
                 // определение видимости header и footer
                 val showHeaderAndFooter = currentDestination != NavigationDestinations.AUTH
-                val hasUnreadNotifications = userPrefs.hasUnreadNotifications()
+                val headerViewModel: HeaderViewModel = hiltViewModel()
+                val hasUnreadNotifications by headerViewModel.hasUnreadNotifications.collectAsState()
 
                 val currentTab = NavigationTabs.AllTabs.find { it.id == currentDestination }
 
