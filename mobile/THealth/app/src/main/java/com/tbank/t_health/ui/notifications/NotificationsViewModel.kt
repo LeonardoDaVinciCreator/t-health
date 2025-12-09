@@ -1,7 +1,6 @@
 package com.tbank.t_health.ui.notifications
 
 import androidx.lifecycle.ViewModel
-import com.tbank.t_health.domain.model.NotificationUiModel
 import com.tbank.t_health.domain.usecase.GetNotificationsUseCase
 import com.tbank.t_health.domain.usecase.MarkNotificationsAsReadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel

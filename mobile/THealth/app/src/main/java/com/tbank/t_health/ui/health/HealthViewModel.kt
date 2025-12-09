@@ -25,12 +25,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HealthViewModel @Inject constructor(
-    //private val getTodayStats: GetTodayStatsUseCase,
     @ApplicationContext private val context: Context,
     private val getTodayStats: GetTodayStatsFromRepoUseCase,
     private val getYesterdayStats: GetYesterdayStatsUseCase,
     private val getTodayTrainingCaloriesUseCase: GetTodayTrainingCaloriesUseCase,
-    //private val observeSteps: ObserveStepsUseCase,
     private val syncActivities: SyncActivitiesUseCase,
     private val getUserUseCase: GetUserUseCase,
 
@@ -105,14 +103,6 @@ class HealthViewModel @Inject constructor(
             }
         }
     }
-
-//    private fun observeTodaySteps() {
-//        viewModelScope.launch {
-//            observeSteps().collect { steps ->
-//                _todayStats.update { it.copy(steps = steps) }
-//            }
-//        }
-//    }
 
     private fun loadYesterday() {
         viewModelScope.launch {
