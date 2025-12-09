@@ -38,4 +38,20 @@ class NotificationStorage  @Inject constructor( @ApplicationContext private val 
 
     fun hasUnread(): Boolean =
         getAll().any { !it.isRead }
+
+    fun addIfNotExists(notification: LocalNotification):Boolean {
+        val notifications = getAll()
+        val exists = notifications.any {
+            it.type == notification.type && it.dayKey == notification.dayKey
+        }
+
+        return if (!exists) {
+            add(notification.copy(id = System.currentTimeMillis()))
+            true
+        } else {
+            false
+        }
+    }
+
+
 }

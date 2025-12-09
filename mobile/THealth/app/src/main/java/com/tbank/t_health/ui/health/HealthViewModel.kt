@@ -181,13 +181,16 @@ class HealthViewModel @Inject constructor(
     private fun checkGoals(steps: Int, activeMinutes: Int, calories: Double) {
         val notifications = mutableListOf<LocalNotification>()
 
+        val todayKey = LocalDate.now().toString()
+
         if (steps >= stepsGoal.value) {
             notifications.add(
                 LocalNotification(
-                    id = System.currentTimeMillis(),
+                    id = 0,
                     type = NotificationType.STEPS,
                     title = "Цель по шагам достигнута!",
-                    description = "Вы прошли $steps шагов. Цель — ${stepsGoal.value.toInt()}."
+                    description = "Вы прошли $steps шагов. Цель — ${stepsGoal.value.toInt()}.",
+                    dayKey = todayKey
                 )
             )
         }
@@ -195,10 +198,11 @@ class HealthViewModel @Inject constructor(
         if (activeMinutes >= activeMinutesGoal.value) {
             notifications.add(
                 LocalNotification(
-                    id = System.currentTimeMillis() + 1,
+                    id = 0,
                     type = NotificationType.ACTIVE_MINUTES,
                     title = "Вы были активны дольше нормы!",
-                    description = "Активность: $activeMinutes минут. Цель — ${activeMinutesGoal.value.toInt()}."
+                    description = "Активность: $activeMinutes минут. Цель — ${activeMinutesGoal.value.toInt()}.",
+                    dayKey = todayKey
                 )
             )
         }
@@ -206,24 +210,28 @@ class HealthViewModel @Inject constructor(
         if (calories >= caloriesGoal.value) {
             notifications.add(
                 LocalNotification(
-                    id = System.currentTimeMillis() + 2,
+                    id = 0,
                     type = NotificationType.CALORIES,
                     title = "Цель по калориям выполнена!",
-                    description = "Вы сожгли ${calories.toInt()} ккал. Цель — ${caloriesGoal.value.toInt()}."
+                    description = "Вы сожгли ${calories.toInt()} ккал. Цель — ${caloriesGoal.value.toInt()}.",
+                    dayKey = todayKey
                 )
             )
         }
 
         if (notifications.isNotEmpty()) {
             notifications.forEach { notif ->
-                //prefs.addNotification(notif)
-                notificationStorage.add(notif)
-
-
-                NotificationHelper.showLocalNotification(
-                    context,
-                    notif
+                val added = notificationStorage.addIfNotExists(
+                    notif.copy(id = System.currentTimeMillis())
                 )
+
+                if (added) {
+                    NotificationHelper.showLocalNotification(
+                        context,
+                        notif
+                    )
+                }
+
             }
         }
     }
