@@ -16,18 +16,31 @@ class NotificationsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _state =
-        MutableStateFlow<List<NotificationUiModel>>(emptyList())
-    val state: StateFlow<List<NotificationUiModel>> = _state
+        MutableStateFlow<List<NotificationsListItem>>(emptyList())
+    val state: StateFlow<List<NotificationsListItem>> = _state
 
     init {
         load()
     }
 
     private fun load() {
+        val all = getNotifications()
 
+        val unread = all.filter { !it.isRead }
+        val read = all.filter { it.isRead }
 
+        val result = buildList {
+            if (unread.isNotEmpty()) {
+                add(NotificationsListItem.Header("Новые"))
+                unread.forEach { add(NotificationsListItem.Item(it)) }
+            }
+            if (read.isNotEmpty()) {
+                add(NotificationsListItem.Header("Просмотренные"))
+                read.forEach { add(NotificationsListItem.Item(it)) }
+            }
+        }
 
-        _state.value = getNotifications()
+        _state.value = result
         markAsRead()
     }
 }

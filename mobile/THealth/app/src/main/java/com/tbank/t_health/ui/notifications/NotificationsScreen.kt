@@ -26,26 +26,21 @@ fun NotificationsScreen(
 ) {
     val items by viewModel.state.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        item {
-            Text(
-                text = "История уведомлений",
-                modifier = Modifier.padding(10.dp),
-                style = TextStyle(
-                    fontFamily = RobotoFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 17.sp,
-                    lineHeight = 17.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.Black
-                ),
-            )
-        }
-
-        items(items) { notification ->
-            NotificationItem(notification)
+    LazyColumn {
+        items(items) { item ->
+            when (item) {
+                is NotificationsListItem.Header -> {
+                    Text(
+                        text = item.title,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.Gray
+                    )
+                }
+                is NotificationsListItem.Item -> {
+                    NotificationItem(item.notification)
+                }
+            }
         }
     }
 }
