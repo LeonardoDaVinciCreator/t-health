@@ -10,6 +10,11 @@ import com.tbank.t_health.data.model.TrainingGetData
 import com.tbank.t_health.data.model.TrainingUpdateData
 import com.tbank.t_health.data.model.UserData
 import com.tbank.t_health.data.model.WorkoutData
+import com.tbank.t_health.data.model.posts.CommentCreateData
+import com.tbank.t_health.data.model.posts.CommentData
+import com.tbank.t_health.data.model.posts.LikeData
+import com.tbank.t_health.data.model.posts.PostCreateData
+import com.tbank.t_health.data.model.posts.PostData
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -92,4 +97,39 @@ interface HealthApiService {
     suspend fun deleteNutrition(
         @Path("id") id: Long
     )
+
+    // ----------- Posts -----------
+
+    @POST("posts/post")
+    suspend fun createPost(@Body post: PostCreateData): PostData
+
+    @GET("posts")
+    suspend fun getFeed(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): List<PostData>
+
+    @POST("posts/{postId}/like")
+    suspend fun likePost(
+        @Path("postId") postId: Long,
+        @Query("userId") userId: Long
+    ): LikeData
+
+    @DELETE("posts/post/{postId}/like")
+    suspend fun unlikePost(
+        @Path("postId") postId: Long,
+        @Query("userId") userId: Long
+    ): LikeData
+
+    @POST("comment")
+    suspend fun createComment(@Body comment: CommentCreateData): Unit
+
+    @GET("{postId}/comments")
+    suspend fun getPostComments(@Path("postId") postId: Long): List<CommentData>
+
+    @DELETE("posts/comment/{commentId}")
+    suspend fun deleteComment(@Path("commentId") commentId: Long): Unit
+
+    @DELETE("posts/post/{postId}")
+    suspend fun deletePost(@Path("postId") postId: Long): Unit
 }
