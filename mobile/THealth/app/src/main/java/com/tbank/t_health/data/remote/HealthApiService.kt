@@ -109,8 +109,11 @@ interface HealthApiService {
         @Query("size") size: Int = 20
     ): List<PostData>
 
+    @DELETE("posts/post/{postId}")
+    suspend fun deletePost(@Path("postId") postId: Long): Unit
+
     @POST("posts/{postId}/like")
-    suspend fun likePost(
+    suspend fun like(
         @Path("postId") postId: Long,
         @Query("userId") userId: Long
     ): LikeData
@@ -121,15 +124,12 @@ interface HealthApiService {
         @Query("userId") userId: Long
     ): LikeData
 
-    @POST("comment")
-    suspend fun createComment(@Body comment: CommentCreateData): Unit
+    @POST("posts/comment")
+    suspend fun createComment(@Body comment: CommentCreateData): CommentData
 
-    @GET("{postId}/comments")
+    @GET("posts/{postId}/comments")
     suspend fun getPostComments(@Path("postId") postId: Long): List<CommentData>
 
     @DELETE("posts/comment/{commentId}")
-    suspend fun deleteComment(@Path("commentId") commentId: Long): Unit
-
-    @DELETE("posts/post/{postId}")
-    suspend fun deletePost(@Path("postId") postId: Long): Unit
+    suspend fun deleteComment(@Path("commentId") commentId: Long)
 }

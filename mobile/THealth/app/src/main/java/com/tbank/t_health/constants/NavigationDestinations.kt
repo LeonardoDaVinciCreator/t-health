@@ -13,6 +13,7 @@ object NavigationDestinations {
     const val AUTH = "auth"
 
     const val NOTIFICATIONS = "notifications"
+    const val ADD_POSTS = "addPosts"
 }
 
 object NavigationTabs {

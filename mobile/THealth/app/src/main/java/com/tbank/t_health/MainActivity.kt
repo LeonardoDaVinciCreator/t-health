@@ -33,6 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import com.tbank.t_health.ui.health.HealthScreen
 import com.tbank.t_health.ui.notifications.NotificationsScreen
+import com.tbank.t_health.ui.posts.addPosts.AddPostScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -107,9 +108,9 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationDestinations.ACHIEVEMENTS) {
                             AchievementsScreen(navController)
                         }
-                        composable(NavigationDestinations.POSTS) {
-                            PostsScreen(navController)
-                        }
+//                        composable(NavigationDestinations.POSTS) {
+//                            PostsScreen(navController)
+//                        }
                         composable(NavigationDestinations.CHAT) {
                             ChatScreen(navController)
                         }
@@ -126,6 +127,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(NavigationDestinations.NOTIFICATIONS) {
                             NotificationsScreen()
+                        }
+                        composable(NavigationDestinations.POSTS) {
+                            AddPostScreen()
                         }
 
                         composable(NavigationDestinations.AUTH) {
