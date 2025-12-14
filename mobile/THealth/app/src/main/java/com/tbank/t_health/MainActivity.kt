@@ -27,13 +27,14 @@ import com.tbank.t_health.screens.auth.AuthScreen
 import com.tbank.t_health.screens.health.AddWorkoutScreen
 import com.tbank.t_health.ui.components.Footer
 import com.tbank.t_health.ui.components.Header
-import com.tbank.t_health.ui.screens.PostsScreen
+
 import com.tbank.t_health.ui.theme.THealthTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 import com.tbank.t_health.ui.health.HealthScreen
 import com.tbank.t_health.ui.notifications.NotificationsScreen
 import com.tbank.t_health.ui.posts.addPosts.AddPostScreen
+import com.tbank.t_health.ui.posts.posts.PostsScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -105,15 +106,6 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationDestinations.HEALTH) {
                             HealthScreen(navController)
                         }
-                        composable(NavigationDestinations.ACHIEVEMENTS) {
-                            AchievementsScreen(navController)
-                        }
-//                        composable(NavigationDestinations.POSTS) {
-//                            PostsScreen(navController)
-//                        }
-                        composable(NavigationDestinations.CHAT) {
-                            ChatScreen(navController)
-                        }
                         composable(NavigationDestinations.PROFILE) {
                             ProfileScreen(navController)
                         }
@@ -128,7 +120,11 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationDestinations.NOTIFICATIONS) {
                             NotificationsScreen()
                         }
+
                         composable(NavigationDestinations.POSTS) {
+                            PostsScreen()
+                        }
+                        composable(NavigationDestinations.ADD_POST) {
                             AddPostScreen()
                         }
 

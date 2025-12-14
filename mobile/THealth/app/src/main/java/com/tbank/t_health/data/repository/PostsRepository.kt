@@ -8,6 +8,11 @@ import javax.inject.Inject
 class PostsRepository @Inject constructor(
     private val api: HealthApiService
 ) {
+    suspend fun getFeed(
+        page: Int = 0,
+        size: Int = 20
+    ) = api.getFeed(page, size)
+
     suspend fun createPostAndLog(userId: Long, title: String, content: String, mediaUrl: String?) {
         val request = PostCreateData(
             userId = userId,

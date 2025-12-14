@@ -4,8 +4,8 @@ import com.tbank.t_health.ui.components.FooterItemData
 
 object NavigationDestinations {
     const val HEALTH = "health"
-    const val ACHIEVEMENTS = "achievements"
     const val POSTS = "posts"
+    const val ADD_POST = "addPosts"
     const val CHAT = "chat"
     const val PROFILE = "profile"
     const val WORKOUT = "workout"
@@ -13,7 +13,6 @@ object NavigationDestinations {
     const val AUTH = "auth"
 
     const val NOTIFICATIONS = "notifications"
-    const val ADD_POSTS = "addPosts"
 }
 
 object NavigationTabs {
@@ -25,14 +24,6 @@ object NavigationTabs {
         iconDefaultHeight = 19
     )
 
-    val Achievements = FooterItemData(
-        id = NavigationDestinations.ACHIEVEMENTS,
-        iconName = "ic_trophy",
-        label = "Достижения",
-        iconDefaultWidth = 25,
-        iconDefaultHeight = 23
-    )
-
     val Posts = FooterItemData(
         id = NavigationDestinations.POSTS,
         iconName = "ic_posts",
@@ -41,8 +32,8 @@ object NavigationTabs {
         iconDefaultHeight = 25
     )
 
-    val Chat = FooterItemData(
-        id = NavigationDestinations.CHAT,
+    val ADD_POST = FooterItemData(
+        id = NavigationDestinations.ADD_POST,
         iconName = "ic_chat",
         label = "Чат",
         iconDefaultWidth = 25,
@@ -57,5 +48,5 @@ object NavigationTabs {
         iconDefaultHeight = 30
     )
 
-    val AllTabs = listOf(Health, Achievements, Posts, Chat, Profile)
+    val AllTabs = listOf(Health, Posts, ADD_POST, Profile)
 }

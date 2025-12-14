@@ -54,6 +54,8 @@ dependencies {
     implementation("androidx.health.connect:connect-client:1.2.0-alpha02")
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
