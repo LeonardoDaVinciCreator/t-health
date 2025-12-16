@@ -1,6 +1,5 @@
 package com.tbank.t_health.ui.posts.posts
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,7 +40,7 @@ fun PostsScreen(
             onDismissRequest = { showPostDetail = null },
             title = { },
             text = {
-                PostDetailScreen(
+                PostDetailDialog(
                     post = post,
                     onClose = { showPostDetail = null },
                     onCommentsClick = {
@@ -62,7 +61,7 @@ fun PostsScreen(
             onDismissRequest = { showComments = null },
             title = { },
             text = {
-                CommentsScreen(
+                CommentsDialog(
                     postId = postId,
                     onBack = { showComments = null },
                     userId = userId
