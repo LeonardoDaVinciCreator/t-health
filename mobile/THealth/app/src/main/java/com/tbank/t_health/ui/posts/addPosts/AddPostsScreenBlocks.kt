@@ -345,7 +345,8 @@ fun FullScreenTextEditor(
 @Composable
 fun MediaAttachBlock(
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    mediaSelected: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -359,19 +360,14 @@ fun MediaAttachBlock(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Иконка слева
-            Box(
+            Image(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    modifier = Modifier.height(38.dp),
-                    painter = painterResource(id = R.drawable.ic_add_media),
-                    contentDescription = null
-                )
-            }
+                painter = painterResource(id = R.drawable.ic_add_media),
+                contentDescription = null,
+                alpha = if (mediaSelected) 0.7f else 1f
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -379,7 +375,7 @@ fun MediaAttachBlock(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Добавьте фото или видео",
+                    text = if (mediaSelected) "Фото выбрано" else "Добавьте фото",
                     style = TextStyle(
                         fontFamily = RobotoFontFamily,
                         fontWeight = FontWeight.Medium,
