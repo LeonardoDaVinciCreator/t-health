@@ -15,6 +15,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -29,6 +31,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.tbank.t_health.R
 import com.tbank.t_health.ui.theme.RobotoFontFamily
 import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
@@ -233,110 +237,140 @@ fun FullScreenTextEditor(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val editorHeight = (screenHeight.value * 0.4f).dp // 40% от высоты экрана
-
     var currentText by remember { mutableStateOf(text) }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFFFDFDFD),
-        title = {
-            Text(
-                "Текст поста:",
-                style = TextStyle(
-                    fontFamily = RobotoFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp
-                )
-            )
-        },
-        text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(editorHeight)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 10.dp, vertical = 8.dp)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(20.dp)),
+            color = Color.White,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                BasicTextField(
-                    value = currentText,
-                    onValueChange = { currentText = it },
-                    maxLines = Int.MAX_VALUE, // много строк
-                    minLines = 1,
-                    textStyle = TextStyle(
-                        fontFamily = RobotoMonoFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 12.sp,
-                        color = Color.Black,
-                        lineHeight = 16.sp
-                    ),
-                    decorationBox = { innerTextField ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (currentText.isEmpty()) {
-                                Text(
-                                    text = "Расскажите подробнее...",
-                                    style = TextStyle(
-                                        fontFamily = RobotoMonoFontFamily,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 12.sp,
-                                        color = Color(0xFF8C8E92)
-                                    )
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            innerTextField()
-                        }
-                    },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(end = 8.dp)
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(currentText)
-                },
-                enabled = currentText.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    "Сохранить",
-                    style = TextStyle(
-                        fontFamily = RobotoFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = Color.Black
+                        .padding(16.dp, 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Текст поста:",
+                        style = TextStyle(
+                            fontFamily = RobotoFontFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        )
                     )
-                )
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F5)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    "Отмена",
-                    style = TextStyle(
-                        fontFamily = RobotoFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = Color.Black
-                    )
-                )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_back),
+                            contentDescription = "Закрыть",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        BasicTextField(
+                            value = currentText,
+                            onValueChange = { currentText = it },
+                            maxLines = Int.MAX_VALUE,
+                            textStyle = TextStyle(
+                                fontFamily = RobotoMonoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                color = Color.Black,
+                                lineHeight = 18.sp
+                            ),
+                            decorationBox = { innerTextField ->
+                                Column {
+                                    if (currentText.isEmpty()) {
+                                        Text(
+                                            text = "Расскажите подробнее...",
+                                            style = TextStyle(
+                                                fontFamily = RobotoMonoFontFamily,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF8C8E92)
+                                            ),
+                                            modifier = Modifier.padding(start = 4.dp)
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(end = 8.dp)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier.padding(end = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F5)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "Отмена",
+                                style = TextStyle(
+                                    fontFamily = RobotoFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp,
+                                    color = Color.Black
+                                )
+                            )
+                        }
+
+                        Button(
+                            onClick = { onConfirm(currentText) },
+                            enabled = currentText.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "Сохранить",
+                                style = TextStyle(
+                                    fontFamily = RobotoFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp,
+                                    color = Color.Black
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
-    )
+    }
 }
+
 
 
 

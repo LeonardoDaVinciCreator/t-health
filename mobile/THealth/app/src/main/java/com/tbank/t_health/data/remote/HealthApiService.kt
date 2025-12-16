@@ -116,13 +116,13 @@ interface HealthApiService {
     suspend fun like(
         @Path("postId") postId: Long,
         @Query("userId") userId: Long
-    ): LikeData
+    ): Unit
 
     @DELETE("posts/post/{postId}/like")
     suspend fun unlikePost(
         @Path("postId") postId: Long,
         @Query("userId") userId: Long
-    ): LikeData
+    ): Unit
 
     @POST("posts/comment")
     suspend fun createComment(@Body comment: CommentCreateData): CommentData

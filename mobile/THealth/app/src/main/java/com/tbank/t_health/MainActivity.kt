@@ -58,6 +58,9 @@ class MainActivity : ComponentActivity() {
                 val headerViewModel: HeaderViewModel = hiltViewModel()
                 val hasUnreadNotifications by headerViewModel.hasUnreadNotifications.collectAsState()
 
+                val user = userPrefs.getUser()
+                val userId = user?.id
+
                 val currentTab = NavigationTabs.AllTabs.find { it.id == currentDestination }
 
                 LaunchedEffect(Unit) {
@@ -119,7 +122,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(NavigationDestinations.POSTS) {
-                            PostsScreen()
+                            PostsScreen(userId)
                         }
                         composable(NavigationDestinations.ADD_POST) {
                             AddPostScreen()

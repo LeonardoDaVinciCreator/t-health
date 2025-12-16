@@ -14,7 +14,7 @@ fun Uri.toBase64(context: Context): String {
             val baos = ByteArrayOutputStream()
             bitmap?.compress(Bitmap.CompressFormat.JPEG, 80, baos)
             val byteArray = baos.toByteArray()
-            "data:image/jpeg;base64,${Base64.encodeToString(byteArray, Base64.NO_WRAP)}"
+            "data:image/jpeg;base64,${Base64.encodeToString(byteArray, Base64.DEFAULT)}"
         } ?: ""
     } catch (e: Exception) {
         android.util.Log.e("MEDIA", "Error converting to base64", e)

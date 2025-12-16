@@ -1,10 +1,5 @@
 package com.tbank.t_health.ui.posts.addPosts
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,7 +7,6 @@ import com.tbank.t_health.data.repository.PostsRepository
 import com.tbank.t_health.domain.usecase.GetUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,8 +19,8 @@ class AddPostsViewModel @Inject constructor(
         val userId = user.id ?: return
         viewModelScope.launch {
             try {
-                postsRepository.createPostAndLog(userId, title, content, mediaUrl)
-                postsRepository.loadFeedAndLog()
+                postsRepository.createPost(userId, title, content, mediaUrl)
+                postsRepository.loadFeed()
             } catch (e: Exception) {
                 Log.e("POSTS", "Error: ${e.message}", e)
             }

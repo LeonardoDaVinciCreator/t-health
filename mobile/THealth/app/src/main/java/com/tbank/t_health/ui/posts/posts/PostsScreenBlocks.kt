@@ -1,21 +1,47 @@
 package com.tbank.t_health.ui.posts.posts
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,32 +54,59 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tbank.t_health.R
+import com.tbank.t_health.data.model.posts.CommentData
 import com.tbank.t_health.data.model.posts.PostData
 import com.tbank.t_health.ui.theme.RobotoFontFamily
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.tbank.t_health.ui.posts.addPosts.TitleBlock
+import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
+import kotlinx.coroutines.launch
 
 @Composable
-fun PostCard(post: PostData) {
+fun PostCard(
+    post: PostData,
+    heartPainter: Painter,
+    commentsPainter: Painter,
+    addMediaPainter: Painter,
+    onPostClick: (PostData) -> Unit,
+    onCommentsClick: (Long) -> Unit,
+    onLikeClick: (Long) -> Unit,
+    isLiked: Boolean = false,
+    userId: Long? = null
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .padding(12.dp),
+            .padding(12.dp)
+            .clickable { onPostClick(post) },
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         PostAuthorRow(
-            authorName = "nickname"
+            authorName = "${post.userId}"
         )
 
         if (post.mediaUrl != null) {
-            PostMedia(post.mediaUrl)
+            PostMedia(post.mediaUrl, addMediaPainter)
         }
 
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-
             Text(
                 text = post.title,
                 style = TextStyle(
@@ -112,7 +165,13 @@ fun PostCard(post: PostData) {
 
             PostActionsRow(
                 likes = post.likesCount,
-                comments = post.commentsCount
+                comments = post.commentsCount,
+                heartPainter = heartPainter,
+                commentsPainter = commentsPainter,
+                onLikeClick = { onLikeClick(post.id ?: 0) },
+                onCommentsClick = { onCommentsClick(post.id ?: 0) },
+                isLiked = isLiked,
+
             )
         }
     }
@@ -138,32 +197,39 @@ fun PostAuthorRow(authorName: String) {
 }
 
 @Composable
-fun PostMedia(url: String) {
+fun PostMedia(url: String, addMediaPainter: Painter) {
     val context = LocalContext.current
 
+    //перенести в veiw model
+    val cleanUrl = if (url.startsWith("data:image")) {
+        val startIndex = url.indexOf("base64,") + 6
+        if (startIndex < url.length) url.substring(startIndex) else url
+    } else {
+        url
+    }
+
+    Log.d("PostMedia", "Original: ${url.take(50)}... -> Clean: ${cleanUrl.take(50)}...")
+
+    //конвертация в байты
+    val imageData = try {
+        android.util.Base64.decode(cleanUrl, android.util.Base64.DEFAULT)
+    } catch (e: IllegalArgumentException) {
+        Log.e("PostMedia", "Неверный base64: ${e.message}")
+        null
+    }
+
     AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(url)
-            .setHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36")
-            .crossfade(true)
-            .listener(
-                onStart = {
-                    android.util.Log.d("PostMedia", "Loading started: $url")
-                },
-                onSuccess = { _, _ ->
-                    android.util.Log.d("PostMedia", "Loading success")
-                },
-                onError = { _, result ->
-                    android.util.Log.e(
-                        "PostMedia",
-                        "Loading error",
-                        result.throwable
-                    )
-                }
-            )
-            .build(),
-        placeholder = painterResource(R.drawable.ic_add_media),
-        error = painterResource(R.drawable.ic_add_media),
+        model = when {
+            imageData != null -> imageData
+            cleanUrl.startsWith("http") -> ImageRequest.Builder(context)
+                .data(cleanUrl)
+                .setHeader("User-Agent", "Mozilla/5.0 (compatible; THealthApp/1.0)")
+                .crossfade(true)
+                .build()
+            else -> R.drawable.ic_add_media
+        },
+        placeholder = addMediaPainter,
+        error = addMediaPainter,
         contentDescription = null,
         modifier = Modifier
             .fillMaxWidth()
@@ -177,21 +243,36 @@ fun PostMedia(url: String) {
 @Composable
 fun PostActionsRow(
     likes: Int,
-    comments: Int
+    comments: Int,
+    heartPainter: Painter,
+    commentsPainter: Painter,
+    onLikeClick: () -> Unit,
+    onCommentsClick: () -> Unit,
+    isLiked: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionItem(R.drawable.ic_heart, likes.toString())
+        Row(
+            modifier = Modifier.clickable { onLikeClick() },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionItem(heartPainter, likes.toString())
+        }
         Spacer(Modifier.width(12.dp))
-        ActionItem(R.drawable.ic_comments, comments.toString())
+        Row(
+            modifier = Modifier.clickable { onCommentsClick() },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionItem(commentsPainter, comments.toString(), isLiked = isLiked)
+        }
     }
 }
 
 @Composable
-fun ActionItem(icon: Int, text: String) {
+fun ActionItem(painter: Painter, text: String, isLiked: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End, modifier = Modifier.width(50.dp)) {
         if (text.isNotEmpty()) {
 
@@ -208,10 +289,442 @@ fun ActionItem(icon: Int, text: String) {
         Spacer(Modifier.width(4.dp))
         Icon(
             modifier = Modifier.size(17.dp),
-            painter = painterResource(icon),
+            painter = painter,
             contentDescription = null,
-            tint = Color.Gray
+            tint = if (isLiked) Color.Red else Color.Gray
         )
 
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostDetailScreen(
+    post: PostData,
+    onClose: () -> Unit,
+    onCommentsClick: () -> Unit,
+    userId: Long? = null,
+    viewModel: PostsViewModel = hiltViewModel()
+) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(20.dp)),
+            color = Color.White,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = post.title,
+                        style = TextStyle(
+                            fontFamily = RobotoMonoFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            lineHeight = 18.sp,
+                            color = Color.Black
+                        ),
+                        maxLines = 2
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_back),
+                            contentDescription = "Закрыть",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Фото
+                    if (post.mediaUrl != null) {
+                        PostMediaFull(post.mediaUrl)
+                    }
+
+                    // Контент
+                    Text(
+                        text = post.content,
+                        style = TextStyle(
+                            fontFamily = RobotoMonoFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 14.sp,
+                            lineHeight = 18.sp,
+                            color = Color.Black
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Статистика
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Лайков: ${post.likesCount}",
+                            style = TextStyle(
+                                fontFamily = RobotoMonoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp
+                            )
+                        )
+                        Text(
+                            "Комментариев: ${post.commentsCount}",
+                            style = TextStyle(
+                                fontFamily = RobotoMonoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp
+                            )
+                        )
+                    }
+
+                    // Кнопка комментариев (в самом низу)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    if (post.commentsCount > 0) {
+                        Button(
+                            onClick = onCommentsClick,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "Комментарии ($post.commentsCount)",
+                                style = TextStyle(
+                                    fontFamily = RobotoFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+
+@Composable
+fun PostMediaFull(url: String) {
+    val context = LocalContext.current
+    val cleanUrl = if (url.startsWith("data:image")) {
+        val startIndex = url.indexOf("base64,") + 6
+        if (startIndex < url.length) url.substring(startIndex) else url
+    } else url
+
+    val imageData = try {
+        android.util.Base64.decode(cleanUrl, android.util.Base64.DEFAULT)
+    } catch (e: Exception) {
+        null
+    }
+
+    AsyncImage(
+        model = when {
+            imageData != null -> imageData
+            cleanUrl.startsWith("http") -> ImageRequest.Builder(context)
+                .data(cleanUrl)
+                .crossfade(true)
+                .build()
+            else -> R.drawable.ic_add_media
+        },
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .clip(RoundedCornerShape(20.dp))
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommentsScreen(
+    postId: Long,
+    onBack: () -> Unit,
+    userId: Long? = null,
+    viewModel: PostsViewModel = hiltViewModel()
+) {
+    val comments by viewModel.comments.collectAsState()
+    val isLoading by viewModel.commentsLoading.collectAsState()
+
+    LaunchedEffect(postId) {
+        viewModel.loadComments(postId)
+    }
+
+    var newCommentText by remember { mutableStateOf("") }
+
+    Dialog(
+        onDismissRequest = onBack,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(20.dp)),
+            color = Color.White,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Комментарии",
+                        style = TextStyle(
+                            fontFamily = RobotoMonoFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            lineHeight = 18.sp,
+                            color = Color.Black
+                        )
+                    )
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_back),
+                            contentDescription = "Назад",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
+                    if (isLoading && comments.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(0.9f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Color(0xFFFDD500))
+                            }
+                        }
+                    } else if (comments.isEmpty() && !isLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(0.9f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "Комментариев пока нет",
+                                        style = TextStyle(
+                                            fontFamily = RobotoFontFamily,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF97A1B2)
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    items(
+                        items = comments,
+                        key = { comment -> comment.id ?: 0L }
+                    ) { comment ->
+                        CommentItem(comment = comment)
+                    }
+                }
+
+                CommentInputBlock(
+                    value = newCommentText,
+                    onValueChange = { newCommentText = it },
+                    onSendClick = {
+                        if (newCommentText.isNotBlank() && userId != null) {
+                            viewModel.createComment(postId = postId, authorId = userId, text = newCommentText)
+                            newCommentText = ""
+                        }
+                    }
+                )
+
+            }
+        }
+    }
+}
+
+@Composable
+fun CommentInputBlock(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSendClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(20.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(
+                fontFamily = RobotoFontFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                color = Color.Black
+            ),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = "Введите комментарий",
+                            style = TextStyle(
+                                fontFamily = RobotoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp,
+                                color = Color(0xFF8C8E92)
+                            )
+                        )
+                    }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        innerTextField()
+                    }
+                }
+            }
+        )
+
+        IconButton(
+            onClick = onSendClick,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_plus),
+                contentDescription = "Отправить",
+                tint = if (value.isNotBlank()) Color(0xFFFDD500) else Color(0xFF97A1B2),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+
+
+@Composable
+fun CommentItem(comment: CommentData) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            // Ник автора
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = comment.authorName,
+                        style = TextStyle(
+                            fontFamily = RobotoFontFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    )
+                    Text(
+                        text = "15:45", // TODO: время из модели
+                        style = TextStyle(
+                            fontFamily = RobotoFontFamily,
+                            fontSize = 12.sp,
+                            color = Color(0xFF9E9E9E)
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            HorizontalDivider(
+                color = Color(0xFFE0E0E0),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Текст комментария (растягивается по высоте)
+            Text(
+                text = comment.text,
+                style = TextStyle(
+                    fontFamily = RobotoFontFamily,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = Color(0xFF333333)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
