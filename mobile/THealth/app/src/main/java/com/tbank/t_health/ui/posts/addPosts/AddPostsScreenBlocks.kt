@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -35,7 +36,6 @@ import com.tbank.t_health.ui.theme.RobotoMonoFontFamily
 
 @Composable
 fun AddPostTopBar(
-    onBackClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -43,10 +43,8 @@ fun AddPostTopBar(
             .height(48.dp)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.Center
     ) {
-        Box(modifier = Modifier.size(48.dp))
-
         Text(
             text = "Создание поста",
             style = TextStyle(
@@ -56,19 +54,6 @@ fun AddPostTopBar(
                 lineHeight = 17.sp
             )
         )
-
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clickable { onBackClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_back),
-                contentDescription = "Back",
-                tint = Color.Black
-            )
-        }
     }
 }
 

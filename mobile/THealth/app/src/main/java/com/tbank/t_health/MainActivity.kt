@@ -106,9 +106,6 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationDestinations.HEALTH) {
                             HealthScreen(navController)
                         }
-                        composable(NavigationDestinations.PROFILE) {
-                            ProfileScreen(navController)
-                        }
 
                         // Второстепенные экраны
                         composable(NavigationDestinations.WORKOUT) {

@@ -114,6 +114,8 @@ fun HealthScreen(
                 .padding(bottom = 60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(12.dp))
+
             ProfileHeaderBlock(user?.username ?: "Гость")
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -126,9 +128,9 @@ fun HealthScreen(
                 activeMinutesGoal = activeMinutesGoal,
                 calories = todayStats.calories,
                 caloriesGoal = caloriesGoal,
-                onStepsGoalClick = { showStepsDialog = true },
+                onStepsGoalClick = { /* TODO */ },
                 onActiveMinutesGoalClick = { /* TODO */ },
-                onCaloriesGoalClick = { showCaloriesDialog = true }
+                onCaloriesGoalClick = { /* TODO */ }
             )
 
             Spacer(modifier = Modifier.height(8.dp))

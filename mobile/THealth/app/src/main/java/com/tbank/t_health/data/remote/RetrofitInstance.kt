@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 
 object RetrofitInstance {
-    private const val BASE_URL = "http://192.168.31.23:8080/api/v1/"//проверять ip, может поменяться
+    private const val BASE_URL = "http://192.168.31.22:8080/api/v1/"//проверять ip, может поменяться
 
     val api: HealthApiService by lazy {
         Retrofit.Builder()

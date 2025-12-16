@@ -17,5 +17,5 @@ data class PostCreateData(
     @SerializedName("userId") val userId: Long,
     @SerializedName("title") val title: String,
     @SerializedName("content") val content: String,
-    @SerializedName("mediaUrl") val mediaUrl: String? = null
+    @SerializedName("mediaUrl") val mediaUrl: String? = null//
 )

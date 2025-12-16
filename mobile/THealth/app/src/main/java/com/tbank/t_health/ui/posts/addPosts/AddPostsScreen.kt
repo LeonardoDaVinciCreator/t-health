@@ -47,7 +47,7 @@ fun AddPostScreen(
 
     Scaffold(
         topBar = {
-            AddPostTopBar(onBackClick = { TODO() })
+            AddPostTopBar()
         },
         floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
@@ -85,10 +85,10 @@ fun AddPostScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            PostTypeBlock(
-                selectedType = selectedType,
-                onTypeSelected = { selectedType = it }
-            )
+//            PostTypeBlock(
+//                selectedType = selectedType,
+//                onTypeSelected = { selectedType = it }
+//            )
 
             TitleBlock(
                 value = title,

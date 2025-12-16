@@ -75,14 +75,14 @@ fun ProfileHeaderBlock(userName: String) {
             .padding(horizontal = 12.dp, vertical = 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_user),
-            contentDescription = "Аватар",
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-        )
-
+//        Image(
+//            painter = painterResource(id = R.drawable.ic_user),
+//            contentDescription = "Аватар",
+//            modifier = Modifier
+//                .size(40.dp)
+//                .clip(CircleShape)
+//        )
+//
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(
@@ -98,16 +98,16 @@ fun ProfileHeaderBlock(userName: String) {
                 )
             )
 
-            Text(
-                text = "HR-отдел",
-                style = TextStyle(
-                    fontFamily = RobotoFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp
-                ),
-                color = Color(0xFF7F7F7F)
-            )
+//            Text(
+//                text = "HR-отдел",
+//                style = TextStyle(
+//                    fontFamily = RobotoFontFamily,
+//                    fontWeight = FontWeight.Normal,
+//                    fontSize = 12.sp,
+//                    lineHeight = 12.sp
+//                ),
+//                color = Color(0xFF7F7F7F)
+//            )
         }
     }
 }
@@ -150,13 +150,13 @@ fun ActivityStatsBlock(
                 )
             )
 
-            Image(
-                painter = painterResource(id = R.drawable.ic_history),
-                contentDescription = "История",
-                modifier = Modifier
-                    .size(22.dp)
-                    .clickable { }
-            )
+//            Image(
+//                painter = painterResource(id = R.drawable.ic_history),
+//                contentDescription = "История",
+//                modifier = Modifier
+//                    .size(22.dp)
+//                    .clickable { }
+//            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -6,8 +6,8 @@ object NavigationDestinations {
     const val HEALTH = "health"
     const val POSTS = "posts"
     const val ADD_POST = "addPosts"
-    const val CHAT = "chat"
-    const val PROFILE = "profile"
+    //const val CHAT = "chat"
+    //const val PROFILE = "profile"
     const val WORKOUT = "workout"
     const val ADD_WORKOUT = "addWorkout"
     const val AUTH = "auth"
@@ -34,19 +34,19 @@ object NavigationTabs {
 
     val ADD_POST = FooterItemData(
         id = NavigationDestinations.ADD_POST,
-        iconName = "ic_chat",
-        label = "Чат",
+        iconName = "ic_plus",
+        label = "Новый пост",
         iconDefaultWidth = 25,
         iconDefaultHeight = 25
     )
 
-    val Profile = FooterItemData(
-        id = NavigationDestinations.PROFILE,
-        iconName = "ic_profile",
-        label = "Профиль",
-        iconDefaultWidth = 30,
-        iconDefaultHeight = 30
-    )
+//    val Profile = FooterItemData(
+//        id = NavigationDestinations.PROFILE,
+//        iconName = "ic_profile",
+//        label = "Профиль",
+//        iconDefaultWidth = 30,
+//        iconDefaultHeight = 30
+//    )
 
-    val AllTabs = listOf(Health, Posts, ADD_POST, Profile)
+    val AllTabs = listOf(Health, Posts, ADD_POST)
 }

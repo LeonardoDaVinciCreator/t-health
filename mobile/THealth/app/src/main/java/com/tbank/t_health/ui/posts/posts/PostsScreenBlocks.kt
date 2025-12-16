@@ -121,13 +121,13 @@ fun PostCard(post: PostData) {
 @Composable
 fun PostAuthorRow(authorName: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_add_media),
-            contentDescription = null,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.ic_add_media),
+//            contentDescription = null,
+//            modifier = Modifier
+//                .size(36.dp)
+//                .clip(CircleShape)
+//        )
 
         Spacer(Modifier.width(8.dp))
 
@@ -181,21 +181,20 @@ fun PostActionsRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionItem(R.drawable.ic_like, likes.toString())
-        ActionItem(R.drawable.ic_add_media, comments.toString())
-        ActionItem(R.drawable.ic_add_media, "0")
-        ActionItem(R.drawable.ic_add_media, "0")
+        ActionItem(R.drawable.ic_heart, likes.toString())
+        Spacer(Modifier.width(12.dp))
+        ActionItem(R.drawable.ic_comments, comments.toString())
     }
 }
 
 @Composable
 fun ActionItem(icon: Int, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End, modifier = Modifier.width(50.dp)) {
         if (text.isNotEmpty()) {
-            Spacer(Modifier.width(4.dp))
+
             Text(text,
                 style = TextStyle(
                     fontFamily = RobotoFontFamily,
@@ -206,6 +205,7 @@ fun ActionItem(icon: Int, text: String) {
                 )
             )
         }
+        Spacer(Modifier.width(4.dp))
         Icon(
             modifier = Modifier.size(17.dp),
             painter = painterResource(icon),
