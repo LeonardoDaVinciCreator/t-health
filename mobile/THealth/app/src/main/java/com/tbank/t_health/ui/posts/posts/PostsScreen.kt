@@ -3,6 +3,7 @@ package com.tbank.t_health.ui.posts.posts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 
 import com.tbank.t_health.R
@@ -36,40 +38,19 @@ fun PostsScreen(
     }
 
     showPostDetail?.let { post ->
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showPostDetail = null },
-            title = { },
-            text = {
-                PostDetailDialog(
-                    post = post,
-                    onClose = { showPostDetail = null },
-                    onCommentsClick = {
-                        showPostDetail = null
-                        showComments = post.id
-                    },
-                    userId = userId
-                )
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
+        Dialog(onDismissRequest = { showPostDetail = null }) {
+            PostDetailDialog(post, { showPostDetail = null }, {
+                showPostDetail = null
+                showComments = post.id
+            }, userId, viewModel)
+        }
     }
 
     // Модальное окно комментариев
     showComments?.let { postId ->
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showComments = null },
-            title = { },
-            text = {
-                CommentsDialog(
-                    postId = postId,
-                    onBack = { showComments = null },
-                    userId = userId
-                )
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
+        Dialog(onDismissRequest = { showComments = null }) {
+            CommentsDialog(postId, { showComments = null }, userId, viewModel)
+        }
     }
 
     Scaffold(
@@ -101,14 +82,13 @@ fun PostsScreen(
                     heartPainter = heartPainter,
                     commentsPainter = commentsPainter,
                     addMediaPainter = addMediaPainter,
+                    viewModel = viewModel,
                     onPostClick = { showPostDetail = post },
                     onCommentsClick = { showComments = post.id ?: 0L },
+                    isLiked = userLikes.contains(post.id ?: 0L),
                     onLikeClick = {
-                        userId?.let { uid ->
-                            viewModel.toggleLike(post.id ?: 0, uid)
-                        }
-                    },
-                    userId = userId
+                        userId?.let { uid -> viewModel.toggleLike(post.id ?: 0, uid) }
+                    }
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.tbank.t_health.data.repository
 
 import android.util.Log
+import com.tbank.t_health.data.model.UserData
 import com.tbank.t_health.data.model.posts.CommentCreateData
 import com.tbank.t_health.data.model.posts.CommentData
 import com.tbank.t_health.data.model.posts.PostCreateData
@@ -14,6 +15,14 @@ class PostsRepository @Inject constructor(
         page: Int = 0,
         size: Int = 20
     ) = api.getFeed(page, size)
+
+    suspend fun getAllUsers(): List<UserData> {
+        return api.getAllUsers()
+    }
+
+    suspend fun getUserById(userId: Long): UserData {
+        return api.getUserById(userId)
+    }
 
     suspend fun createPost(userId: Long, title: String, content: String, mediaUrl: String?) {
         val request = PostCreateData(

@@ -70,23 +70,25 @@ fun PostCard(
     heartPainter: Painter,
     commentsPainter: Painter,
     addMediaPainter: Painter,
+    viewModel: PostsViewModel,
     onPostClick: (PostData) -> Unit,
     onCommentsClick: (Long) -> Unit,
     onLikeClick: (Long) -> Unit,
-    isLiked: Boolean = false,
-    userId: Long? = null
+    isLiked: Boolean = false
 ) {
+    val userName = viewModel.getUserName(post.userId)
+    val formattedDate = formatDate(post.createdAt)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .padding(12.dp)
-            .clickable { onPostClick(post) },
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         PostAuthorRow(
-            authorName = "${post.userId}"
+            authorName = userName
         )
 
         if (post.mediaUrl != null) {
@@ -126,7 +128,7 @@ fun PostCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "15:45 15.02.2025",
+                    text = formattedDate,
                     style = TextStyle(
                         fontFamily = RobotoFontFamily,
                         fontWeight = FontWeight.Medium,
@@ -137,6 +139,7 @@ fun PostCard(
                 )
 
                 Text(
+                    modifier = Modifier.clickable { onPostClick(post) },
                     text = "Читать далее...",
                     style = TextStyle(
                         fontFamily = RobotoFontFamily,
@@ -167,14 +170,6 @@ fun PostCard(
 @Composable
 fun PostAuthorRow(authorName: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-//        Image(
-//            painter = painterResource(id = R.drawable.ic_add_media),
-//            contentDescription = null,
-//            modifier = Modifier
-//                .size(36.dp)
-//                .clip(CircleShape)
-//        )
-
         Spacer(Modifier.width(8.dp))
 
         Column {
@@ -246,14 +241,14 @@ fun PostActionsRow(
             modifier = Modifier.clickable { onLikeClick() },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ActionItem(heartPainter, likes.toString())
+            ActionItem(heartPainter, likes.toString(), isLiked = isLiked)
         }
         Spacer(Modifier.width(12.dp))
         Row(
             modifier = Modifier.clickable { onCommentsClick() },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ActionItem(commentsPainter, comments.toString(), isLiked = isLiked)
+            ActionItem(commentsPainter, comments.toString())
         }
     }
 }
@@ -390,26 +385,6 @@ fun PostDetailDialog(
                                 lineHeight = 14.sp
                             )
                         )
-                    }
-
-                    // Кнопка комментариев (в самом низу)
-                    Spacer(modifier = Modifier.height(24.dp))
-                    if (post.commentsCount > 0) {
-                        Button(
-                            onClick = onCommentsClick,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD500)),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                "Комментарии ($post.commentsCount)",
-                                style = TextStyle(
-                                    fontFamily = RobotoFontFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp
-                                )
-                            )
-                        }
                     }
                 }
             }
@@ -651,8 +626,6 @@ fun CommentInputBlock(
     }
 }
 
-
-
 @Composable
 fun CommentItem(comment: CommentData) {
     Card(
@@ -679,14 +652,6 @@ fun CommentItem(comment: CommentData) {
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
-                        )
-                    )
-                    Text(
-                        text = "15:45", // TODO: время из модели
-                        style = TextStyle(
-                            fontFamily = RobotoFontFamily,
-                            fontSize = 12.sp,
-                            color = Color(0xFF9E9E9E)
                         )
                     )
                 }
