@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.tbank.t_health.constants.HealthPermissions
 import com.tbank.t_health.constants.HealthPermissions.PERMISSIONS
+import com.tbank.t_health.ui.health.food.NutritionViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,6 +69,10 @@ fun HealthScreen(
     var permissionRequested by remember { mutableStateOf(false) }
 
     val trainingCalories by viewModel.trainingCalories.collectAsState()
+
+    val nutritionViewModel: NutritionViewModel = hiltViewModel()
+    val nutritionCalories by nutritionViewModel.todayNutritionCalories.collectAsState()
+
 
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract()
@@ -175,7 +180,7 @@ fun HealthScreen(
             )
 
             Spacer(modifier = Modifier.height(14.dp))
-            MenuSection(navController = navController, calories = trainingCalories)
+            MenuSection(navController = navController, calories = trainingCalories, nutritionCalories = nutritionCalories)
         }
     }
 }

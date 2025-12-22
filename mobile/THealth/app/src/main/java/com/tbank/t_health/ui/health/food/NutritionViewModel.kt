@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,22 +26,42 @@ class NutritionViewModel @Inject constructor(
 
     private val _selectedRange = MutableStateFlow<Pair<LocalDate?, LocalDate?>?>(null)
     val selectedRange: StateFlow<Pair<LocalDate?, LocalDate?>?> = _selectedRange.asStateFlow()
-    
+
+    private val _todayNutritionCalories = MutableStateFlow(0)
+    val todayNutritionCalories: StateFlow<Int> =
+        _todayNutritionCalories.asStateFlow()
+
     init {
         loadNutritions()
     }
+
     private fun loadNutritions() {
         viewModelScope.launch {
             try {
                 val user = getUserUseCase()
                 if (user?.id != null) {
-                    _nutritions.value = repository.getUserNutritions(user.id)
+                    val data = repository.getUserNutritions(user.id)
+                    _nutritions.value = data
+
+                    val today = LocalDate.now()
+
+                    _todayNutritionCalories.value =
+                        data
+                            .filter { nutrition ->
+                                nutrition.date
+                                    .toLocalDate() == today
+                            }
+                            .sumOf { it.mealCalories }
                 }
             } catch (e: Exception) {
                 Log.e("NutritionVM", "Ошибка загрузки", e)
             }
         }
     }
+
+    private fun String.toLocalDate(): LocalDate =
+        LocalDateTime.parse(this).toLocalDate()
+
 
     fun updateRange(start: LocalDate?, end: LocalDate?) {
         _selectedRange.value = start to end

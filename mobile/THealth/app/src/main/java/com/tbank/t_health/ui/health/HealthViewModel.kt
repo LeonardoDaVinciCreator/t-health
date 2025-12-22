@@ -10,11 +10,13 @@ import com.tbank.t_health.data.local.UserPrefs
 import com.tbank.t_health.data.model.ActivityFullData
 import com.tbank.t_health.data.model.LocalNotification
 import com.tbank.t_health.data.model.NotificationType
+import com.tbank.t_health.data.model.NutritionGetData
 import com.tbank.t_health.data.model.UserData
 import com.tbank.t_health.data.repository.ActivityRepository
 import com.tbank.t_health.domain.model.DailyStats
 import com.tbank.t_health.domain.usecase.*
 import com.tbank.t_health.domain.usecase.GetUserUseCase
+import com.tbank.t_health.ui.health.food.parseDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -64,6 +66,10 @@ class HealthViewModel @Inject constructor(
 
     private val _caloriesGoal = MutableStateFlow(500f)
     val caloriesGoal: StateFlow<Float> = _caloriesGoal
+
+    private val _nutritionCalories = MutableStateFlow(0)
+    val nutritionCalories: StateFlow<Int> = _nutritionCalories.asStateFlow()
+
 
 
     val activeMinutesProgress: StateFlow<Float> = combine(
@@ -225,5 +231,13 @@ class HealthViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadTodayNutritionCalories(nutritions: List<NutritionGetData>) {
+        val today = LocalDate.now()
+        _nutritionCalories.value = nutritions
+            .filter { it.parseDate() == today }
+            .sumOf { it.mealCalories }
+    }
+
 
 }

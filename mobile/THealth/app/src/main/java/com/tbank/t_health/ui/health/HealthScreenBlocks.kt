@@ -650,7 +650,7 @@ fun StepsChart2(
 }
 
 @Composable
-fun MenuSection(navController: NavController, calories:Double) {
+fun MenuSection(navController: NavController, calories:Double, nutritionCalories: Int) {
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxWidth()
@@ -664,7 +664,7 @@ fun MenuSection(navController: NavController, calories:Double) {
         )
 
         //добавить переменную для калорий из еды
-        MenuItem("Питание", onClick = {
+        MenuItem("Питание", calories = "$nutritionCalories", onClick = {
             Log.d("Exercise", "Питание нажато")
             navController.navigate(NavigationDestinations.NUTRITION)
         },
