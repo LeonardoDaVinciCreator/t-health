@@ -33,6 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import com.tbank.t_health.ui.health.HealthScreen
 import com.tbank.t_health.ui.health.addFood.AddNutritionScreen
+import com.tbank.t_health.ui.health.food.NutritionScreen
 import com.tbank.t_health.ui.notifications.NotificationsScreen
 import com.tbank.t_health.ui.posts.addPosts.AddPostScreen
 import com.tbank.t_health.ui.posts.posts.PostsScreen
@@ -127,7 +128,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(NavigationDestinations.NUTRITION){
-                            AddNutritionScreen(navController = navController)
+                            NutritionScreen(navController = navController)
                         }
                         composable(NavigationDestinations.ADD_NUTRITION){
                             AddNutritionScreen(navController = navController)
