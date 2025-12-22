@@ -92,7 +92,12 @@ fun FoodFields(
                     ) {
                         Text(
                             text = selectedMealType?.displayName ?: field.label.orEmpty(),
-                            color = if (selectedMealType == null) Color(0xFF8C8E92) else Color.Black
+                            style = TextStyle(
+                                fontFamily = RobotoMonoFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 12.sp,
+                                color = if (selectedMealType == null) Color(0xFF8C8E92) else Color.Black
+                            )
                         )
 
                         if (showMealTypePicker) {
