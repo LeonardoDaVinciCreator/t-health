@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.tbank.t_health.R
+import com.tbank.t_health.components.SelectableTypePickerDialog
 import com.tbank.t_health.data.model.ActivityData
 import com.tbank.t_health.data.model.ActivityType
 import com.tbank.t_health.data.model.MealType
@@ -332,8 +333,10 @@ fun TrainingFields(fields: List<FieldData>) {
                         )
 
                         if (showWorkoutTypePicker) {
-                            WorkoutTypePickerDialog(
-                                initialType = selectedWorkoutType,
+                            SelectableTypePickerDialog(
+                                titleText = "Выберите тип нагрузки",
+                                items = WorkoutType.entries.toTypedArray(),
+                                initialSelection = selectedWorkoutType,
                                 onDismiss = { showWorkoutTypePicker = false },
                                 onConfirm = { type ->
                                     selectedWorkoutType = type
@@ -342,6 +345,7 @@ fun TrainingFields(fields: List<FieldData>) {
                                 }
                             )
                         }
+
                     }
                 }
 

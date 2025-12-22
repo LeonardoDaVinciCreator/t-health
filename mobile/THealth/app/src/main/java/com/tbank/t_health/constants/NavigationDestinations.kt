@@ -10,6 +10,9 @@ object NavigationDestinations {
     //const val PROFILE = "profile"
     const val WORKOUT = "workout"
     const val ADD_WORKOUT = "addWorkout"
+
+    const val NUTRITION = "nutrition"
+    const val ADD_NUTRITION = "addNutrition"
     const val AUTH = "auth"
 
     const val NOTIFICATIONS = "notifications"

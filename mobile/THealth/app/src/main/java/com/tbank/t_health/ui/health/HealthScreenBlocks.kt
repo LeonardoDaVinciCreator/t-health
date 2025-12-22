@@ -669,6 +669,7 @@ fun MenuSection(navController: NavController, calories:Double) {
         },
             onClickAdd = {
                 Log.d("Exercise", "Добавить калории за еду")
+                navController.navigate(NavigationDestinations.ADD_NUTRITION)
             }
         )
     }

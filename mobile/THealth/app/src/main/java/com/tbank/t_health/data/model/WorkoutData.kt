@@ -1,5 +1,6 @@
 package com.tbank.t_health.data.model
 
+import com.tbank.t_health.components.DisplayableType
 import java.time.LocalDate
 
 data class WorkoutData(
@@ -13,18 +14,14 @@ data class WorkoutData(
     val isCompleted: Boolean = false
 )
 
-enum class WorkoutType(val displayName: String) {
+enum class WorkoutType(override val displayName: String) : DisplayableType {
     CARDIO("Кардио"),
     STRENGTH("Силовая"),
     ENDURANCE("На выносливость"),
     FLEXIBILITY("Гибкость"),
-    BALANCE("Баланс");
-
-    companion object {
-        fun fromDisplayName(name: String): WorkoutType? =
-            entries.firstOrNull { it.displayName == name }
-    }
+    BALANCE("Баланс")
 }
+
 
 //{
 //    "name": "Беговая тренировка",

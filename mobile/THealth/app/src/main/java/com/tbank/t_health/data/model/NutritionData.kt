@@ -1,5 +1,7 @@
 package com.tbank.t_health.data.model
 
+import com.tbank.t_health.components.DisplayableType
+
 data class NutritionGetData(
     val id: Long? = null,
     val userId: Long,
@@ -25,8 +27,9 @@ data class NutritionParameters(
     val carbohydrate: Double
 )
 
-enum class MealType {
-    BREAKFAST,
-    LUNCH,
-    DINNER
+enum class MealType(override val displayName: String) : DisplayableType {
+    BREAKFAST("Завтрак"),
+    LUNCH("Обед"),
+    DINNER("Ужин")
 }
+

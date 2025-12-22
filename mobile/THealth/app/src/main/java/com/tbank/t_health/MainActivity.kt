@@ -32,6 +32,7 @@ import com.tbank.t_health.ui.theme.THealthTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 import com.tbank.t_health.ui.health.HealthScreen
+import com.tbank.t_health.ui.health.addFood.AddNutritionScreen
 import com.tbank.t_health.ui.notifications.NotificationsScreen
 import com.tbank.t_health.ui.posts.addPosts.AddPostScreen
 import com.tbank.t_health.ui.posts.posts.PostsScreen
@@ -110,6 +111,13 @@ class MainActivity : ComponentActivity() {
                             HealthScreen(navController)
                         }
 
+                        composable(NavigationDestinations.POSTS) {
+                            PostsScreen(userId)
+                        }
+                        composable(NavigationDestinations.ADD_POST) {
+                            AddPostScreen()
+                        }
+
                         // Второстепенные экраны
                         composable(NavigationDestinations.WORKOUT) {
                             WorkoutScreen(navController)
@@ -117,16 +125,19 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationDestinations.ADD_WORKOUT) {
                             AddWorkoutScreen(navController)
                         }
+
+                        composable(NavigationDestinations.NUTRITION){
+                            AddNutritionScreen(navController = navController)
+                        }
+                        composable(NavigationDestinations.ADD_NUTRITION){
+                            AddNutritionScreen(navController = navController)
+                        }
+
                         composable(NavigationDestinations.NOTIFICATIONS) {
                             NotificationsScreen()
                         }
 
-                        composable(NavigationDestinations.POSTS) {
-                            PostsScreen(userId)
-                        }
-                        composable(NavigationDestinations.ADD_POST) {
-                            AddPostScreen()
-                        }
+
 
                         composable(NavigationDestinations.AUTH) {
                             AuthScreen(

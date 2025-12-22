@@ -2,8 +2,9 @@ package com.tbank.t_health.data.repository
 
 import com.tbank.t_health.data.model.NutritionCreateData
 import com.tbank.t_health.data.remote.HealthApiService
+import javax.inject.Inject
 
-class NutritionRepository(private val api: HealthApiService) {
+class NutritionRepository @Inject constructor(private val api: HealthApiService) {
     suspend fun createNutrition(data: NutritionCreateData) =
         api.createNutrition(data)
 
